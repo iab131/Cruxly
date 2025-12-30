@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -37,10 +36,8 @@ model Location {
   createdAt DateTime     @default(now()) @map("created_at")
 
   // Relations
-  climbers HomeGymUsers[] @relation("HomeGym") // Named slightly differently to resolve disambiguation if needed, but here simple relation works
+  climbers User[] @relation("HomeGym")
   problems Problem[]
-
-  User User[] @relation("HomeGym")
 
   @@map("locations")
 }

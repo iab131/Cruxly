@@ -2,77 +2,106 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { navItems } from "@/config/nav-config"
+import { Home, Compass, PlusSquare, User, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    // Don't show shell on auth pages
+    const isAuthPage = pathname?.startsWith("/auth")
+
+    if (isAuthPage) {
+        return <div className="min-h-screen bg-slate-50">{children}</div>
+    }
+
+    const navItems = [
+        { label: "Home", href: "/", icon: Home },
+        { label: "Explore", href: "/", icon: Search }, // Re-using Feed for now
+        { label: "Create", href: "/new", icon: PlusSquare },
+        { label: "Profile", href: "/me", icon: User },
+    ]
 
     return (
-        <div className="flex min-h-screen flex-col md:flex-row bg-background font-sans text-foreground">
-            {/* Desktop Sidebar */}
-            <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 border-r bg-sidebar border-sidebar-border z-30">
-                <div className="p-6 border-b border-sidebar-border h-16 flex items-center">
-                    <h1 className="text-2xl font-bold tracking-tight text-sidebar-primary">Cruxly</h1>
+        <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans">
+            {/* Desktop Sidebar (Left) */}
+            <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 border-r bg-white z-50">
+                <div className="p-6 h-20 flex items-center">
+                    <Link href="/" className="flex flex-col items-center gap-2 text-2xl font-bold text-blue-950 tracking-tight">
+                        <span>Cruxly</span>
+                    </Link>
                 </div>
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+
+                <nav className="flex-1 px-3 py-2 space-y-2">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
                             <Link
-                                key={item.href}
+                                key={item.label}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium text-sm",
-                                    isActive
-                                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                    "flex items-center gap-4 px-4 py-3 rounded-xl transition-all group hover:bg-slate-50",
+                                    isActive && "font-bold text-blue-950 bg-slate-50"
                                 )}
                             >
-                                <item.icon className="h-5 w-5" />
-                                {item.label}
+                                <item.icon className={cn(
+                                    "w-6 h-6 transition-colors",
+                                    isActive ? "stroke-[2.5px] text-blue-950" : "text-slate-500 group-hover:text-slate-900"
+                                )} />
+                                <span className={cn("text-base", isActive ? "text-blue-950" : "text-slate-600 group-hover:text-slate-900")}>{item.label}</span>
                             </Link>
                         )
                     })}
                 </nav>
-                <div className="p-4 border-t border-sidebar-border mt-auto">
-                    {/* Placeholder for user shorthand or settings */}
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-sidebar-foreground/70">
-                        <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs">U</div>
-                        <span>User</span>
-                    </div>
+
+                <div className="p-6 mt-auto border-t border-slate-100">
+                    <Link href="/me" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+                            ME
+                        </div>
+                        <div className="text-sm font-medium text-slate-700">My Account</div>
+                    </Link>
                 </div>
             </aside>
 
-            {/* Mobile Header */}
-            <header className="md:hidden sticky top-0 z-30 flex items-center h-14 px-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border">
-                <h1 className="text-xl font-bold text-primary">Cruxly</h1>
+            {/* Mobile Header (Top) */}
+            <header className="md:hidden fixed top-0 w-full z-40 bg-white border-b border-slate-200 h-14 px-4 flex items-center justify-between">
+                <Link href="/" className="flex items-center gap-2 text-xl font-bold text-blue-950 tracking-tight">
+                    <Image src="/logo-blue.png" alt="Cruxly" width={24} height={24} />
+                    Cruxly
+                </Link>
+                <div className="flex gap-4">
+                    {/* Placeholder for future mobile header actions */}
+                </div>
             </header>
 
-            {/* Main Content Area */}
-            <main className="flex-1 md:ml-64 pb-20 md:pb-0 min-h-0">
-                {/* pb-20 for mobile bottom nav spacing */}
-                <div className="h-full">
+            {/* Main Content */}
+            <main className={cn(
+                "flex-1 min-h-screen w-full",
+                "md:ml-64", // Offset for sidebar
+                "pb-16 md:pb-0", // Space for mobile nav
+                "pt-14 md:pt-0" // Space for mobile header
+            )}>
+                <div className="max-w-4xl mx-auto w-full">
                     {children}
                 </div>
             </main>
 
-            {/* Mobile Bottom Nav */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border h-16 safe-area-pb">
-                <div className="grid h-full grid-cols-4 items-center">
+            {/* Mobile Bottom Tab Bar */}
+            <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 z-50 h-16 px-6 pb-safe">
+                <div className="grid grid-cols-4 h-full items-center justify-items-center">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         return (
                             <Link
-                                key={item.href}
+                                key={item.label}
                                 href={item.href}
-                                className={cn(
-                                    "flex flex-col items-center justify-center gap-1 h-full w-full transition-colors",
-                                    isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
-                                )}
+                                className="flex items-center justify-center h-full w-full active:scale-95 transition-transform"
                             >
-                                <item.icon className={cn("h-6 w-6", isActive && "stroke-[2.5px]")} />
-                                <span className="text-[10px] font-medium">{item.label}</span>
+                                <item.icon className={cn(
+                                    "w-6 h-6 transition-all",
+                                    isActive ? "text-blue-950 stroke-[2.5px]" : "text-slate-400"
+                                )} />
                             </Link>
                         )
                     })}
