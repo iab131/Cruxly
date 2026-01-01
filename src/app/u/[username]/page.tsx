@@ -1,16 +1,32 @@
 import { ProblemCard } from "@/components/problem-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function UserProfilePage({ params }: { params: { username: string } }) {
-    // Mock Data
+import { prisma } from "@/lib/prisma"
+import { notFound } from "next/navigation"
+
+export default async function UserProfilePage({ params }: { params: { username: string } }) {
+    const data = await prisma.user.findUnique({
+        where: { username: params.username },
+        include: { setProblems: true }
+    })
+
+    if (!data) {
+        notFound()
+    }
+
+    // Map to UI format
     const user = {
-        username: params.username,
-        bio: "V7 Climber | Setter at Crux | Coffee Addict",
-        stats: { posted: 42, likes: 850 },
-        climbs: [
-            { id: "1", name: "The Slab", grade: "V3", gym: "Crux Climbing", image: "https://images.unsplash.com/photo-1598555845686-25f00e2a8627?auto=format&fit=crop&q=80&w=800", type: "Boulder" },
-            { id: "3", name: "Crimpy Boi", grade: "V4", gym: "Crux Climbing", image: "https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&q=80&w=800", type: "Boulder" },
-        ]
+        username: data.username,
+        bio: data.bio || "No bio yet.",
+        stats: { posted: data.setProblems.length, likes: 0 },
+        climbs: data.setProblems.map(p => ({
+            id: p.id,
+            name: p.name,
+            grade: p.grade,
+            gym: p.gym,
+            image: p.image,
+            type: p.type
+        }))
     }
 
     return (

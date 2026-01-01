@@ -2,19 +2,31 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Heart, Bookmark, Share2, MapPin } from "lucide-react"
 
-export default function ProblemDetailPage({ params }: { params: { id: string } }) {
-    // Mock Data
+import { prisma } from "@/lib/prisma"
+import { notFound } from "next/navigation"
+
+export default async function ProblemDetailPage({ params }: { params: { id: string } }) {
+    const data = await prisma.problem.findUnique({
+        where: { id: params.id },
+        include: { setter: true }
+    })
+
+    if (!data) {
+        notFound()
+    }
+
+    // Map to UI format
     const problem = {
-        name: "The Slab",
-        grade: "V3",
-        gym: "Crux Climbing",
-        builder: "Alex H.",
-        image: "https://images.unsplash.com/photo-1598555845686-25f00e2a8627?auto=format&fit=crop&q=80&w=1600",
-        description: "A technical slab problem requiring precise footwork and balance. Use the small crimp on the left to stabilize before making the move to the volume.",
+        name: data.name,
+        grade: data.grade,
+        gym: data.gym,
+        builder: data.setter?.username || "Unknown",
+        image: data.image,
+        description: data.description || "No description available.",
         stats: {
-            likes: 24,
-            attempts: 156,
-            completionRate: "32%"
+            likes: 0,
+            attempts: 0,
+            completionRate: "0%"
         }
     }
 

@@ -4,78 +4,35 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  username    String   @unique
-  homeGymId   String?  @map("home_gym_id")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  username  String   @unique
+  bio       String?
+  image     String?  // For avatar
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  homeGym     Location? @relation("HomeGym", fields: [homeGymId], references: [id])
   setProblems Problem[] @relation("Setter")
-  logs        Log[]
 
   @@map("users")
 }
 
-enum LocationType {
-  GYM
-  OUTDOOR
-}
-
-model Location {
-  id        String       @id @default(uuid())
-  name      String
-  type      LocationType
-  lat       Float
-  lng       Float
-  address   String?
-  createdAt DateTime     @default(now()) @map("created_at")
-
-  // Relations
-  climbers User[] @relation("HomeGym")
-  problems Problem[]
-
-  @@map("locations")
-}
-
 model Problem {
-  id         String   @id @default(uuid())
-  locationId String   @map("location_id")
-  setterId   String   @map("setter_id")
-  imageUrl   String   @map("image_url")
-  grade      String
-  color      String?
-  tags       String[]
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  name        String
+  grade       String
+  gym         String   // Storing as string for now to match mock data simple structure
+  type        String   // "Boulder", "Sport"
+  image       String   // URL
+  description String?
+  setterId    String?  @map("setter_id") // Optional because existing mock data has builders like "Staff"
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
-  location Location @relation(fields: [locationId], references: [id])
-  setter   User     @relation("Setter", fields: [setterId], references: [id])
-  logs     Log[]
+  setter      User?    @relation("Setter", fields: [setterId], references: [id])
 
   @@map("problems")
-}
-
-enum LogStatus {
-  FLASH
-  REDPOINT
-  PROJECT
-}
-
-model Log {
-  id        String    @id @default(uuid())
-  userId    String    @map("user_id")
-  problemId String    @map("problem_id")
-  status    LogStatus
-  date      DateTime  @default(now())
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id])
-  problem Problem @relation(fields: [problemId], references: [id])
-
-  @@map("logs")
 }
