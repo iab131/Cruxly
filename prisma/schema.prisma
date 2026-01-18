@@ -15,19 +15,23 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-
-  // Relations
-  // setProblems Problem[] @relation("Setter")
+  setProblems Problem[] @relation("Setter")
 
   @@map("users")
 }
 
 model Problem {
-  id        Int      @id @default(autoincrement())
-  title     String
-  grade     String
-  imageUrl  String?  @map("image_url")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  name        String
+  grade       String
+  gym         String
+  image       String?  @map("image_url")
+  type        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  setterId    String?  @map("setter_id")
+  setter      User?    @relation("Setter", fields: [setterId], references: [id])
 
   @@map("problems")
 }
