@@ -7,12 +7,34 @@ import { notFound } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 
+import { auth } from "@clerk/nextjs/server"
+import { LikeButton } from "@/components/LikeButton"
+
 export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
+    const { userId } = await auth();
+
     const data = await prisma.problem.findUnique({
         where: { id },
-        include: { user: true }
+        include: { 
+            user: true,
+            _count: { select: { likes: true } }
+        }
     })
+
+    // Check if user liked
+    let hasLiked = false
+    if (userId && data) {
+        const like = await prisma.like.findUnique({
+            where: {
+                userId_problemId: {
+                    userId,
+                    problemId: id
+                }
+            }
+        })
+        hasLiked = !!like
+    }
 
     if (!data) {
         notFound()
@@ -28,7 +50,7 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
         description: data.description || "No description available.",
         tags: data.tags,
         stats: {
-            likes: 0,
+            likes: data._count.likes,
             attempts: 0,
             completionRate: "0%"
         }
@@ -75,10 +97,15 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
                         </div>
 
                         {/* Actions Row */}
-                        <div className="flex items-center gap-4 py-4 border-y border-slate-100">
-                            <Button variant="outline" size="sm" className="gap-2 text-slate-700">
-                                <Heart className="w-4 h-4" /> Like
-                            </Button>
+                        <div className="flex items-start gap-4 py-4 border-y border-slate-100">
+                           <LikeButton 
+                                problemId={id} 
+                                initialHasLiked={hasLiked} 
+                                initialLikesCount={problem.stats.likes}
+                                isLoggedIn={!!userId}
+                            />
+                            {/* Visual separation since LikeButton has its own styling */}
+                            <div className="h-8 w-px bg-slate-200 mx-2 hidden" /> 
                             <Button variant="outline" size="sm" className="gap-2 text-slate-700">
                                 <Bookmark className="w-4 h-4" /> Save
                             </Button>

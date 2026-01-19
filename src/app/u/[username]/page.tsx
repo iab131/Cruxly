@@ -4,10 +4,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 
-export default async function UserProfilePage({ params }: { params: { username: string } }) {
+import { auth } from "@clerk/nextjs/server"
+
+export default async function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
+    const { username } = await params
+    const { userId: currentUserId } = await auth()
     const data = await prisma.user.findFirst({
-        where: { username: params.username },
-        include: { problems: true }
+        where: { username },
+        include: { 
+            problems: {
+                include: {
+                    _count: { select: { likes: true } }
+                }
+            }
+        }
     })
 
     if (!data) {
@@ -15,6 +25,19 @@ export default async function UserProfilePage({ params }: { params: { username: 
     }
 
     // Map to UI format
+    // Fetch liked problem IDs for the current viewer
+    let likedProblemIds = new Set<string>();
+    if (currentUserId && data.problems.length > 0) {
+        const userLikes = await prisma.like.findMany({
+            where: {
+                userId: currentUserId,
+                problemId: { in: data.problems.map(p => p.id) }
+            },
+            select: { problemId: true }
+        });
+        likedProblemIds = new Set(userLikes.map(l => l.problemId));
+    }
+
     const user = {
         username: data.username,
         bio: data.bio || "No bio yet.",
@@ -25,7 +48,9 @@ export default async function UserProfilePage({ params }: { params: { username: 
             grade: p.grade,
             gym: p.gym,
             image: p.image,
-            type: p.type
+            type: p.type,
+            initialLikesCount: p._count.likes,
+            initialHasLiked: likedProblemIds.has(p.id)
         }))
     }
 
@@ -59,7 +84,11 @@ export default async function UserProfilePage({ params }: { params: { username: 
                 <h2 className="text-lg font-bold text-slate-900 px-1">Posted Problems</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {user.climbs.map((prob) => (
-                        <ProblemCard key={prob.id} {...prob} />
+                        <ProblemCard 
+                            key={prob.id} 
+                            {...prob} 
+                            isLoggedIn={!!currentUserId}
+                        />
                     ))}
                 </div>
             </div>

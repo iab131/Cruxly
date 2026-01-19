@@ -16,8 +16,22 @@ model User {
 
   // Relations
   problems  Problem[]
+  likes     Like[]
 
   @@map("users")
+}
+
+model Like {
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId    String   @map("user_id")
+  problemId String   @map("problem_id")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([userId, problemId])
+  @@map("likes")
 }
 
 model Problem {
@@ -33,6 +47,7 @@ model Problem {
 
   userId      String   @map("user_id")
   user        User     @relation(fields: [userId], references: [id])
+  likes       Like[]
 
   @@map("problems")
 }

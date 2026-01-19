@@ -6,10 +6,27 @@ import { SignInButton } from "@clerk/nextjs"
 
 export default async function FeedPage() {
   const { userId } = await auth();
+  
   const problems = await prisma.problem.findMany({
-    include: { user: true },
+    include: { 
+      user: true, 
+      _count: { select: { likes: true } }
+    },
     orderBy: { createdAt: 'desc' }
   })
+
+  // Fetch liked problem IDs for the current user
+  let likedProblemIds = new Set<string>();
+  if (userId) {
+    const userLikes = await prisma.like.findMany({
+      where: {
+        userId,
+        problemId: { in: problems.map(p => p.id) }
+      },
+      select: { problemId: true }
+    });
+    likedProblemIds = new Set(userLikes.map(l => l.problemId));
+  }
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -36,6 +53,9 @@ export default async function FeedPage() {
             key={prob.id}
             {...prob}
             builder={prob.user?.username || "Unknown"}
+            initialLikesCount={prob._count.likes}
+            initialHasLiked={likedProblemIds.has(prob.id)}
+            isLoggedIn={!!userId}
           />
         ))}
       </div>
