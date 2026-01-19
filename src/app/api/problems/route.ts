@@ -53,6 +53,14 @@ export async function POST(request: NextRequest) {
         const type = formData.get('type') as string || 'boulder'; // Default to boulder if missing
         const description = formData.get('description') as string;
         const image = formData.get('image') as File;
+        const tagsJson = formData.get('tags') as string;
+        
+        let tags: string[] = [];
+        try {
+            tags = tagsJson ? JSON.parse(tagsJson) : [];
+        } catch (e) {
+            console.warn("Failed to parse tags", e);
+        }
 
         if (!name || !grade || !gym || !image) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -91,6 +99,7 @@ export async function POST(request: NextRequest) {
                 description,
                 image: imageUrl,
                 userId: dbUser.id,
+                tags: tags, // Start server restart required to enable this
             }
         });
 

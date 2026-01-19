@@ -6,14 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Trash2, MapPin, Settings } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 
 interface Problem {
     id: string
     name: string
     grade: string
     gym: string
-    image: string | null
+    image: string
     type: string
+    tags: string[]
     createdAt: string
 }
 
@@ -138,7 +141,7 @@ export default function MePage() {
                                          <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
                                      )}
                                      <div className="absolute top-2 right-2">
-                                         <Badge className="bg-white/90 text-slate-900 border-none">{problem.grade}</Badge>
+                                         <Badge className={cn("border-0 shadow-sm", getGradeBadgeStyle(problem.grade))}>{problem.grade}</Badge>
                                      </div>
                                 </Link>
                                 <div className="p-4">
@@ -152,6 +155,17 @@ export default function MePage() {
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
+                                    
+                                    {problem.tags && problem.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                            {problem.tags.map(tag => (
+                                                <span key={tag} className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <div className="flex items-center gap-2 text-sm text-slate-500">
                                         <MapPin className="w-4 h-4" />
                                         <span>{problem.gym}</span>

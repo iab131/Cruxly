@@ -54,11 +54,10 @@ export default function CreateProblemPage() {
         formData.set('image', file) // Ensure file is set correctly
         formData.set('type', discipline)
 
-        // Append styles to description since we don't have a DB column yet
-        if (discipline === 'boulder' && boulderStyles.length > 0) {
-            const currentDesc = formData.get('description') as string || ""
-            const stylesText = `\n\nStyles: ${boulderStyles.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}`
-            formData.set('description', currentDesc + stylesText)
+        if (discipline === 'boulder') {
+            formData.set('tags', JSON.stringify(boulderStyles))
+        } else {
+            formData.set('tags', JSON.stringify([]))
         }
         
         // Add gym search value if it's not in the form naturally (it is an input, so it should be)

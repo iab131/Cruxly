@@ -28,6 +28,7 @@ model Problem {
   image       String?  @map("image_url")
   type        String
   description String?
+  tags        String[] @default([])
   createdAt   DateTime @default(now()) @map("created_at")
 
   userId      String   @map("user_id")
