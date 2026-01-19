@@ -5,9 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 
 export default async function UserProfilePage({ params }: { params: { username: string } }) {
-    const data = await prisma.user.findUnique({
+    const data = await prisma.user.findFirst({
         where: { username: params.username },
-        include: { setProblems: true }
+        include: { problems: true }
     })
 
     if (!data) {
@@ -18,8 +18,8 @@ export default async function UserProfilePage({ params }: { params: { username: 
     const user = {
         username: data.username,
         bio: data.bio || "No bio yet.",
-        stats: { posted: data.setProblems.length, likes: 0 },
-        climbs: data.setProblems.map(p => ({
+        stats: { posted: data.problems.length, likes: 0 },
+        climbs: data.problems.map(p => ({
             id: p.id,
             name: p.name,
             grade: p.grade,
@@ -35,7 +35,7 @@ export default async function UserProfilePage({ params }: { params: { username: 
             <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
                 <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
                     <AvatarImage src="https://github.com/shadcn.png" />
-                    <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{(user.username || "U").substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">@{user.username}</h1>
