@@ -9,8 +9,14 @@ import { UploadCloud, Loader2, Image as ImageIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner" 
 
+import { GradeSelector } from "@/components/GradeSelector"
+import { DisciplineSelector } from "@/components/DisciplineSelector"
+
 export default function CreateProblemPage() {
     const [file, setFile] = useState<File | null>(null)
+    const [grade, setGrade] = useState("")
+    const [discipline, setDiscipline] = useState("boulder")
+    const [boulderStyles, setBoulderStyles] = useState<string[]>([])
     const [preview, setPreview] = useState<string | null>(null)
     const [uploading, setUploading] = useState(false)
     const router = useRouter()
@@ -36,12 +42,24 @@ export default function CreateProblemPage() {
             toast.error("Please upload an image")
             return
         }
+        if (!grade) {
+            toast.error("Please select a grade")
+            return
+        }
 
         setUploading(true)
         
         const form = event.currentTarget
         const formData = new FormData(form)
         formData.set('image', file) // Ensure file is set correctly
+        formData.set('type', discipline)
+
+        // Append styles to description since we don't have a DB column yet
+        if (discipline === 'boulder' && boulderStyles.length > 0) {
+            const currentDesc = formData.get('description') as string || ""
+            const stylesText = `\n\nStyles: ${boulderStyles.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}`
+            formData.set('description', currentDesc + stylesText)
+        }
         
         // Add gym search value if it's not in the form naturally (it is an input, so it should be)
         // Adjust for other fields if needed.
@@ -115,19 +133,18 @@ export default function CreateProblemPage() {
                         <Input id="name" name="name" placeholder="e.g. The Pink One" required className="bg-white" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="grade">Grade</Label>
-                            <Input id="grade" name="grade" placeholder="e.g. V4" required className="bg-white" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="type">Type</Label>
-                            <select id="type" name="type" className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-                                <option value="boulder">Boulder</option>
-                                <option value="sport">Sport</option>
-                                <option value="trad">Trad</option>
-                            </select>
-                        </div>
+                    <div className="space-y-2">
+                        <Label>Difficulty</Label>
+                        <GradeSelector value={grade} onChange={setGrade} />
+                    </div>
+                    
+                    <div className="    ">
+                        <DisciplineSelector 
+                            discipline={discipline} 
+                            onDisciplineChange={setDiscipline}
+                            boulderStyles={boulderStyles}
+                            onBoulderStylesChange={setBoulderStyles}
+                        />
                     </div>
 
                     <div className="space-y-2">
