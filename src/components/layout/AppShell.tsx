@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation"
 import { Home, Compass, PlusSquare, User, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs"
+import { SignInButton, SignedOut, SignedIn, UserButton, useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Toaster } from "sonner"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const { user } = useUser()
     // Don't show shell on auth pages
     const isAuthPage = pathname?.startsWith("/auth")
 
@@ -86,9 +87,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="p-6 mt-auto border-t border-slate-100">
                     <SignedIn>
                         <Link href="/me" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
-                                ME
-                            </div>
+                            {user?.imageUrl ? (
+                                <Image 
+                                    src={user.imageUrl} 
+                                    alt={user.fullName || "User"} 
+                                    width={32} 
+                                    height={32} 
+                                    className="w-8 h-8 rounded-full bg-slate-200 object-cover" 
+                                />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+                                    {user?.firstName?.[0] || "ME"}
+                                </div>
+                            )}
                             <div className="text-sm font-medium text-slate-700">My Account</div>
                         </Link>
                     </SignedIn>

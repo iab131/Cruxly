@@ -9,7 +9,7 @@ interface ProblemCardProps {
     name: string
     grade: string
     gym: string
-    image: string
+    image: string | null
     type?: string
     builder?: string
     tags?: string[]
@@ -21,22 +21,21 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags }
             <Card className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer bg-white h-full flex flex-col">
                 <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
                     <img
-                        src={image}
+                        src={image || ""}
                         alt={name}
                         className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                     />
-                    <Badge className={cn("absolute top-2 right-2 border-0 shadow-md transition-colors", getGradeBadgeStyle(grade))}>
-                        {grade}
-                    </Badge>
+
                 </div>
                 <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-lg font-bold text-slate-900 line-clamp-1">{name || "Untitled Climb"}</CardTitle>
-                    {builder && <p className="text-xs text-muted-foreground font-normal">by {builder}</p>}
-                </CardHeader>
-                <CardContent className="p-4 pt-0 mt-auto space-y-3">
-                    {/* Tags Row */}
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                        <CardTitle className="text-lg font-bold text-slate-900 line-clamp-1">{name || "Untitled Climb"}</CardTitle>
+                        <Badge className={cn("border-0 shadow-sm transition-colors shrink-0 px-2.5", getGradeBadgeStyle(grade))}>
+                            {grade}
+                        </Badge>
+                    </div>
                     {tags && tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 mb-2">
                             {tags.map(tag => (
                                 <span key={tag} className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-500 border border-slate-200">
                                     {tag}
@@ -44,6 +43,10 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags }
                             ))}
                         </div>
                     )}
+                    {builder && <p className="text-xs text-muted-foreground font-normal">by {builder}</p>}
+                </CardHeader>
+                <CardContent className="p-4 pt-0 mt-auto space-y-3">
+
                 
                     <div className="text-sm font-medium text-blue-950 flex items-center justify-between pt-1">
                         <span className="flex items-center gap-2">

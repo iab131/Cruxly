@@ -4,6 +4,8 @@ import { Heart, Bookmark, Share2, MapPin } from "lucide-react"
 
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 
 export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -24,6 +26,7 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
         builder: data.user?.username || "Unknown",
         image: data.image ?? undefined,
         description: data.description || "No description available.",
+        tags: data.tags,
         stats: {
             likes: 0,
             attempts: 0,
@@ -36,12 +39,22 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
             {/* Hero Image */}
             <div className="w-full h-[40vh] md:h-[50vh] bg-slate-100 relative overflow-hidden">
                 <img src={problem.image} alt={problem.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-4 md:p-8 text-white w-full max-w-7xl mx-auto">
-                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm font-bold text-lg px-3 py-1 mb-2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-4 md:p-8 text-white w-full max-w-7xl mx-auto flex flex-col items-start gap-2">
+                    <Badge className={cn("text-white font-extrabold text-lg px-4 py-1.5 shadow-lg mb-1", getGradeBadgeStyle(problem.grade))}>
                         {problem.grade}
                     </Badge>
-                    <h1 className="text-3xl md:text-5xl font-bold mb-2">{problem.name}</h1>
+                    <h1 className="text-3xl md:text-5xl font-bold">{problem.name}</h1>
+                    
+                    {problem.tags && problem.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {problem.tags.map(tag => (
+                                <span key={tag} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 font-bold uppercase tracking-wider text-[10px] md:text-xs">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
