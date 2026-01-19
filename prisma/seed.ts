@@ -7,10 +7,12 @@ async function main() {
     console.log('Start seeding...')
 
     // Create Users
+    // Create Users
     const alex = await prisma.user.upsert({
-        where: { username: 'alexh' },
+        where: { id: 'user_alex' },
         update: {},
         create: {
+            id: 'user_alex',
             username: 'alexh',
             bio: 'Route Setter | V3 Enthusiast',
             image: 'https://github.com/shadcn.png',
@@ -18,9 +20,10 @@ async function main() {
     })
 
     const sarah = await prisma.user.upsert({
-        where: { username: 'sarahj' },
+        where: { id: 'user_sarah' },
         update: {},
         create: {
+            id: 'user_sarah',
             username: 'sarahj',
             bio: 'Local Crusher',
             image: 'https://github.com/shadcn.png',
@@ -28,9 +31,10 @@ async function main() {
     })
 
     const mike = await prisma.user.upsert({
-        where: { username: 'miker' },
+        where: { id: 'user_mike' },
         update: {},
         create: {
+            id: 'user_mike',
             username: 'miker',
             bio: 'Crimps are life',
             image: 'https://github.com/shadcn.png',
@@ -38,9 +42,10 @@ async function main() {
     })
 
     const chris = await prisma.user.upsert({
-        where: { username: 'chriss' },
+        where: { id: 'user_chris' },
         update: {},
         create: {
+            id: 'user_chris',
             username: 'chriss',
             bio: 'Sport climbing mostly',
             image: 'https://github.com/shadcn.png',
@@ -56,7 +61,7 @@ async function main() {
             gym: 'Crux Climbing',
             image: 'https://images.unsplash.com/photo-1598555845686-25f00e2a8627?auto=format&fit=crop&q=80&w=800',
             type: 'Boulder',
-            setterId: alex.id,
+            userId: alex.id,
             description: 'A technical slab problem requiring precise footwork and balance. Use the small crimp on the left to stabilize before making the move to the volume.',
         },
         {
@@ -66,7 +71,7 @@ async function main() {
             gym: 'Vertical Limits',
             image: 'https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&q=80&w=800',
             type: 'Boulder',
-            setterId: sarah.id,
+            userId: sarah.id,
             description: 'Steep and powerful capabilities.',
         },
         {
@@ -76,7 +81,7 @@ async function main() {
             gym: 'Crux Climbing',
             image: 'https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&q=80&w=800',
             type: 'Boulder',
-            setterId: mike.id,
+            userId: mike.id,
             description: 'Finger strength test piece.',
         },
         {
@@ -86,7 +91,7 @@ async function main() {
             gym: 'Boulders Inc',
             image: 'https://images.unsplash.com/photo-1578306071477-0c7da0d2e5b7?auto=format&fit=crop&q=80&w=800',
             type: 'Boulder',
-            // No setter (Unknown)
+            userId: alex.id,
             description: 'Mystery problem set by unknown.',
         },
         {
@@ -96,7 +101,7 @@ async function main() {
             gym: 'Gravity Vault',
             image: 'https://images.unsplash.com/photo-1601924582970-9238bcb495d9?auto=format&fit=crop&q=80&w=800',
             type: 'Boulder',
-            // No setter (Staff)
+            userId: sarah.id,
             description: 'Classic corner problem.',
         },
         {
@@ -106,7 +111,7 @@ async function main() {
             gym: 'Rock Spot',
             image: 'https://images.unsplash.com/photo-1516592672327-c36ddab4cf2d?auto=format&fit=crop&q=80&w=800',
             type: 'Sport',
-            setterId: chris.id,
+            userId: chris.id,
             description: 'Endurance fest through the roof.',
         },
     ]
