@@ -5,10 +5,11 @@ import { Heart, Bookmark, Share2, MapPin } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 
-export default async function ProblemDetailPage({ params }: { params: { id: string } }) {
+export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const data = await prisma.problem.findUnique({
-        where: { id: params.id },
-        include: { setter: true }
+        where: { id },
+        include: { user: true }
     })
 
     if (!data) {
@@ -20,8 +21,8 @@ export default async function ProblemDetailPage({ params }: { params: { id: stri
         name: data.name,
         grade: data.grade,
         gym: data.gym,
-        builder: data.setter?.username || "Unknown",
-        image: data.image,
+        builder: data.user?.username || "Unknown",
+        image: data.image ?? undefined,
         description: data.description || "No description available.",
         stats: {
             likes: 0,

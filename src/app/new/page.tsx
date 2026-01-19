@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { UploadCloud, Loader2, Image as ImageIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner" 
 
 export default function CreateProblemPage() {
     const [file, setFile] = useState<File | null>(null)
@@ -17,6 +18,13 @@ export default function CreateProblemPage() {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selectedFile = e.target.files[0]
+            
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                toast.error("File is too large. Maximum size is 5MB.")
+                e.target.value = "" // Reset input
+                return
+            }
+
             setPreview(URL.createObjectURL(selectedFile))
             setFile(selectedFile)
         }
@@ -24,12 +32,39 @@ export default function CreateProblemPage() {
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault()
-        // Mock submission
+        if (!file) {
+            toast.error("Please upload an image")
+            return
+        }
+
         setUploading(true)
-        setTimeout(() => {
+        
+        const form = event.currentTarget
+        const formData = new FormData(form)
+        formData.set('image', file) // Ensure file is set correctly
+        
+        // Add gym search value if it's not in the form naturally (it is an input, so it should be)
+        // Adjust for other fields if needed.
+
+        try {
+            const res = await fetch('/api/problems', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!res.ok) {
+                const data = await res.json()
+                throw new Error(data.error || 'Failed to create problem')
+            }
+
+            const problem = await res.json()
+            router.push(`/p/${problem.id}`)
+        } catch (error) {
+            console.error(error)
+            alert(error instanceof Error ? error.message : "Something went wrong")
+        } finally {
             setUploading(false)
-            router.push("/")
-        }, 1500)
+        }
     }
 
     return (
@@ -86,9 +121,18 @@ export default function CreateProblemPage() {
                             <Input id="grade" name="grade" placeholder="e.g. V4" required className="bg-white" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="gym">Location / Gym</Label>
-                            <Input id="gym" name="gym" placeholder="Search gym..." required className="bg-white" />
+                            <Label htmlFor="type">Type</Label>
+                            <select id="type" name="type" className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
+                                <option value="boulder">Boulder</option>
+                                <option value="sport">Sport</option>
+                                <option value="trad">Trad</option>
+                            </select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="gym">Location / Gym</Label>
+                        <Input id="gym" name="gym" placeholder="Search gym..." required className="bg-white" />
                     </div>
 
                     <div className="space-y-2">

@@ -1,32 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const problemId = parseInt(id);
-
-    if (isNaN(problemId)) {
-        return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-    }
 
     try {
-        const result = await prisma.$queryRaw`
-      SELECT * FROM problems
-      WHERE id = ${problemId}
-    `;
+        const problem = await prisma.problem.findUnique({
+             where: { id },
+             include: { user: true }
+         });
 
-        const problems = result as any[];
-
-        if (problems.length === 0) {
+        if (!problem) {
             return NextResponse.json({ error: 'Problem not found' }, { status: 404 });
         }
 
-        return NextResponse.json(problems[0]);
+        return NextResponse.json(problem);
     } catch (error) {
         console.error('Error fetching problem:', error);
         return NextResponse.json({ error: 'Failed to fetch problem' }, { status: 500 });
+    }
+}
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { userId } = await auth();
+        const { id } = await params;
+
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const problem = await prisma.problem.findUnique({
+            where: { id },
+        });
+
+        if (!problem) {
+            return NextResponse.json({ error: "Problem not found" }, { status: 404 });
+        }
+
+        if (problem.userId !== userId) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        await prisma.problem.delete({
+            where: { id },
+        });
+
+        return NextResponse.json({ message: "Problem deleted" });
+    } catch (error) {
+        console.error("Delete error:", error);
+        return NextResponse.json({ error: "Failed to delete problem" }, { status: 500 });
     }
 }

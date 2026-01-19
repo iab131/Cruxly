@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { uploadToR2 } from '@/lib/r2';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
@@ -24,12 +25,36 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const { userId } = await auth();
+        const user = await currentUser();
+
+        if (!userId || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Sync user to DB if not exists
+        const dbUser = await prisma.user.upsert({
+            where: { id: userId },
+            update: {
+                username: user.username || user.firstName || "Climber",
+                image: user.imageUrl,
+            },
+            create: {
+                id: userId,
+                username: user.username || user.firstName || "Climber",
+                image: user.imageUrl,
+            },
+        });
+
         const formData = await request.formData();
-        const title = formData.get('title') as string;
+        const name = formData.get('name') as string;
         const grade = formData.get('grade') as string;
+        const gym = formData.get('gym') as string;
+        const type = formData.get('type') as string || 'boulder'; // Default to boulder if missing
+        const description = formData.get('description') as string;
         const image = formData.get('image') as File;
 
-        if (!title || !grade || !image) {
+        if (!name || !grade || !gym || !image) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
@@ -44,17 +69,30 @@ export async function POST(request: NextRequest) {
         }
 
         // Upload to R2
-        const imageUrl = await uploadToR2(image, 'problems');
+        let imageUrl: string | null = null;
+        try {
+             imageUrl = await uploadToR2(image, 'problems');
+        } catch (uploadError) {
+             console.error("R2 Upload Error:", uploadError);
+             return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
+        }
+
+        if (!imageUrl) {
+             return NextResponse.json({ error: 'Failed to generate image URL' }, { status: 500 });
+        }
 
         // Insert into DB
-        const result = await prisma.$queryRaw`
-      INSERT INTO problems (title, grade, image_url, created_at)
-      VALUES (${title}, ${grade}, ${imageUrl}, NOW())
-      RETURNING *
-    `;
-
-        // prisma.$queryRaw returns an array, we want the first item
-        const newProblem = Array.isArray(result) ? result[0] : result;
+        const newProblem = await prisma.problem.create({
+            data: {
+                name,
+                grade,
+                gym,
+                type,
+                description,
+                image: imageUrl,
+                userId: dbUser.id,
+            }
+        });
 
         return NextResponse.json(newProblem, { status: 201 });
     } catch (error) {

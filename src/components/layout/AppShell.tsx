@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation"
 import { Home, Compass, PlusSquare, User, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import { SignInButton, SignedOut, SignedIn, UserButton } from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
+import { Toaster } from "sonner"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -16,10 +19,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     const navItems = [
-        { label: "Home", href: "/", icon: Home },
-        { label: "Explore", href: "/", icon: Search }, // Re-using Feed for now
-        { label: "Create", href: "/new", icon: PlusSquare },
-        { label: "Profile", href: "/me", icon: User },
+        { label: "Home", href: "/", icon: Home, protected: false },
+        { label: "Explore", href: "/", icon: Search, protected: false }, // Re-using Feed for now
+        { label: "Create", href: "/new", icon: PlusSquare, protected: true },
+        { label: "Profile", href: "/me", icon: User, protected: true },
     ]
 
     return (
@@ -35,32 +38,70 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <nav className="flex-1 px-3 py-2 space-y-2">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
+                        const commonClasses = cn(
+                            "flex items-center gap-4 px-4 py-3 rounded-xl transition-all group hover:bg-slate-50 w-full",
+                            isActive && "font-bold text-blue-950 bg-slate-50"
+                        )
+                        const Icon = item.icon
+                        const iconClasses = cn(
+                            "w-6 h-6 transition-colors",
+                            isActive ? "stroke-[2.5px] text-blue-950" : "text-slate-500 group-hover:text-slate-900"
+                        )
+                        const textClasses = cn("text-base", isActive ? "text-blue-950" : "text-slate-600 group-hover:text-slate-900")
+
+                        const content = (
+                            <>
+                                <Icon className={iconClasses} />
+                                <span className={textClasses}>{item.label}</span>
+                            </>
+                        )
+
+                        if (item.protected) {
+                             return (
+                                <div key={item.label}>
+                                    <SignedIn>
+                                        <Link href={item.href} className={commonClasses}>
+                                            {content}
+                                        </Link>
+                                    </SignedIn>
+                                    <SignedOut>
+                                         <SignInButton mode="modal">
+                                            <button className={commonClasses + " text-left"}>
+                                                {content}
+                                            </button>
+                                         </SignInButton>
+                                    </SignedOut>
+                                </div>
+                             )
+                        }
+
                         return (
-                            <Link
-                                key={item.label}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-4 px-4 py-3 rounded-xl transition-all group hover:bg-slate-50",
-                                    isActive && "font-bold text-blue-950 bg-slate-50"
-                                )}
-                            >
-                                <item.icon className={cn(
-                                    "w-6 h-6 transition-colors",
-                                    isActive ? "stroke-[2.5px] text-blue-950" : "text-slate-500 group-hover:text-slate-900"
-                                )} />
-                                <span className={cn("text-base", isActive ? "text-blue-950" : "text-slate-600 group-hover:text-slate-900")}>{item.label}</span>
+                            <Link key={item.label} href={item.href} className={commonClasses}>
+                                {content}
                             </Link>
                         )
                     })}
                 </nav>
 
                 <div className="p-6 mt-auto border-t border-slate-100">
-                    <Link href="/me" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
-                            ME
-                        </div>
-                        <div className="text-sm font-medium text-slate-700">My Account</div>
-                    </Link>
+                    <SignedIn>
+                        <Link href="/me" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+                                ME
+                            </div>
+                            <div className="text-sm font-medium text-slate-700">My Account</div>
+                        </Link>
+                    </SignedIn>
+                    <SignedOut>
+                         <SignInButton mode="modal">
+                            <button className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors w-full text-left">
+                                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-700">
+                                    <User className="w-4 h-4" />
+                                </div>
+                                <div className="text-sm font-medium text-slate-700">Sign In</div>
+                            </button>
+                         </SignInButton>
+                    </SignedOut>
                 </div>
             </aside>
 
@@ -70,8 +111,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Image src="/logo-blue.png" alt="Cruxly" width={24} height={24} />
                     Cruxly
                 </Link>
-                <div className="flex gap-4">
-                    {/* Placeholder for future mobile header actions */}
+                <div className="flex gap-4 items-center">
+                    <SignedIn>
+                        <UserButton />
+                    </SignedIn>
+                    <SignedOut>
+                         <SignInButton mode="modal">
+                            <Button variant="ghost" size="icon" className="text-blue-950">
+                                <User className="w-5 h-5" />
+                            </Button>
+                         </SignInButton>
+                    </SignedOut>
                 </div>
             </header>
 
@@ -92,21 +142,45 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="grid grid-cols-4 h-full items-center justify-items-center">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
+                        const commonClasses = "flex items-center justify-center h-full w-full active:scale-95 transition-transform"
+                        const Icon = item.icon
+                        const iconClasses = cn(
+                                    "w-6 h-6 transition-all",
+                                    isActive ? "text-blue-950 stroke-[2.5px]" : "text-slate-400"
+                                )
+
+                        if (item.protected) {
+                            return (
+                                <div key={item.label} className="w-full h-full flex items-center justify-center fae">
+                                    <SignedIn>
+                                        <Link href={item.href} className={commonClasses}>
+                                            <Icon className={iconClasses} />
+                                        </Link>
+                                    </SignedIn>
+                                    <SignedOut>
+                                        <SignInButton mode="modal">
+                                            <button className={commonClasses}>
+                                                <Icon className={iconClasses} />
+                                            </button>
+                                        </SignInButton>
+                                    </SignedOut>
+                                </div>
+                            )
+                        }
+
                         return (
                             <Link
                                 key={item.label}
                                 href={item.href}
-                                className="flex items-center justify-center h-full w-full active:scale-95 transition-transform"
+                                className={commonClasses}
                             >
-                                <item.icon className={cn(
-                                    "w-6 h-6 transition-all",
-                                    isActive ? "text-blue-950 stroke-[2.5px]" : "text-slate-400"
-                                )} />
+                                <Icon className={iconClasses} />
                             </Link>
                         )
                     })}
                 </div>
             </nav>
+            <Toaster richColors position="top-center" />
         </div>
     )
 }
