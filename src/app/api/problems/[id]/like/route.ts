@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { pusherServer } from "@/lib/pusher"
 
 export async function POST(
     req: Request,
@@ -62,6 +63,11 @@ export async function POST(
         // Get updated count
         const count = await prisma.like.count({
             where: { problemId }
+        })
+
+        // Real-time update
+        await pusherServer.trigger(`problem-${problemId}`, "like:updated", {
+            count
         })
 
         return NextResponse.json({

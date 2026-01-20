@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from "react"
 import { useUser } from "@clerk/nextjs"
 import { CommentInput } from "./comment-input"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { pusherClient } from "@/lib/pusher"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Loader2, MessageSquare } from "lucide-react"
+import { toast } from "sonner"
 
 interface CommentUser {
     id: string
@@ -83,6 +85,23 @@ export function CommentSection({ problemId }: CommentSectionProps) {
         return () => { mounted = false }
     }, [fetchComments])
 
+    useEffect(() => {
+        const channel = pusherClient.subscribe(`problem-${problemId}`)
+        
+        channel.bind("comment:created", (data: { comment: Comment }) => {
+            setComments(prev => {
+                if (prev.some(c => c.id === data.comment.id)) {
+                    return prev
+                }
+                return [data.comment, ...prev]
+            })
+        })
+
+        return () => {
+            pusherClient.unsubscribe(`problem-${problemId}`)
+        }
+    }, [problemId])
+
     const loadMore = async () => {
         if (!nextCursor || isLoadingMore) return
 
@@ -116,11 +135,16 @@ export function CommentSection({ problemId }: CommentSectionProps) {
             })
             
             if (!res.ok) {
+                if (res.status === 404) {
+                    // Already deleted, technically a success from UI perspective
+                    return
+                }
                 throw new Error("Failed to delete")
             }
         } catch (error) {
             console.error("Delete failed:", error)
-            // Ideally revert state here on error
+            toast.error("Failed to delete comment")
+            // Revert state if needed, but for now we assume it stays deleted or refresh fixes it
         } finally {
             setDeleteCandidateId(null)
         }

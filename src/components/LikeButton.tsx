@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Heart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { pusherClient } from "@/lib/pusher"
 
 interface LikeButtonProps {
     problemId: string
@@ -18,6 +19,18 @@ export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLo
     const [isPending, startTransition] = useTransition()
     const [hasLiked, setHasLiked] = useState(initialHasLiked)
     const [likesCount, setLikesCount] = useState(initialLikesCount)
+
+    useEffect(() => {
+        const channel = pusherClient.subscribe(`problem-${problemId}`)
+        
+        channel.bind("like:updated", (data: { count: number }) => {
+            setLikesCount(data.count)
+        })
+
+        return () => {
+            pusherClient.unsubscribe(`problem-${problemId}`)
+        }
+    }, [problemId])
 
     const toggleLike = async () => {
         if (!isLoggedIn) {

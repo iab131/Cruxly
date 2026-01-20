@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { pusherServer } from "@/lib/pusher";
 
 export async function GET(
     request: Request,
@@ -110,6 +111,11 @@ export async function POST(
                 },
             },
         });
+
+        // Real-time update
+        await pusherServer.trigger(`problem-${id}`, "comment:created", {
+            comment
+        })
 
         return NextResponse.json(comment, { status: 201 });
     } catch (error) {
