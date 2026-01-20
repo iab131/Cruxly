@@ -25,11 +25,19 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
         <Link href={`/p/${id}`} className="block h-full">
             <Card className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer bg-white h-full flex flex-col">
                 <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
-                    <img
-                        src={image || ""}
-                        alt={name}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={image}
+                            alt={name}
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                           {/* Placeholder pattern or icon could go here */}
+                           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+                        </div>
+                    )}
 
                 </div>
                 <CardHeader className="p-4 pb-2 pt-0">
