@@ -17,6 +17,7 @@ model User {
   // Relations
   problems  Problem[]
   likes     Like[]
+  comments  Comment[]
 
   @@map("users")
 }
@@ -34,6 +35,22 @@ model Like {
   @@map("likes")
 }
 
+model Comment {
+  id        String   @id @default(uuid())
+  content   String?
+  mediaUrl  String?  @map("media_url")
+  mediaType String?  @map("media_type") // "image" | "video"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId    String   @map("user_id")
+  problemId String   @map("problem_id")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
 model Problem {
   id          String   @id @default(uuid())
   name        String
@@ -48,6 +65,7 @@ model Problem {
   userId      String   @map("user_id")
   user        User     @relation(fields: [userId], references: [id])
   likes       Like[]
+  comments    Comment[]
 
   @@map("problems")
 }

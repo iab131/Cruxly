@@ -9,6 +9,7 @@ import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 
 import { auth } from "@clerk/nextjs/server"
 import { LikeButton } from "@/components/LikeButton"
+import { CommentSection } from "@/components/comment-section"
 
 export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -119,6 +120,10 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
                             <p className="text-slate-600 leading-relaxed">
                                 {problem.description}
                             </p>
+                        </div>
+
+                        <div className="pt-8 border-t border-slate-100">
+                            <CommentSection problemId={id} />
                         </div>
                     </div>
 
