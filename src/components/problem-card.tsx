@@ -1,8 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
+import { MapPin } from "lucide-react"
 
 interface ProblemCardProps {
     id: string
@@ -15,67 +15,85 @@ interface ProblemCardProps {
     tags?: string[]
     initialHasLiked?: boolean
     initialLikesCount?: number
-    isLoggedIn?: boolean // passed from parent to avoid prop drilling auth state excessively, or we can use useUser in LikeButton (which we are)
+    isLoggedIn?: boolean 
 }
 
 import { LikeButton } from "./LikeButton"
 
 export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, initialHasLiked = false, initialLikesCount = 0 }: ProblemCardProps) {
     return (
-        <Link href={`/p/${id}`} className="block h-full">
-            <Card className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer bg-white h-full flex flex-col">
-                <div className="aspect-[4/3] relative bg-slate-100 overflow-hidden">
-                    {image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                            src={image}
-                            alt={name}
-                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
-                           {/* Placeholder pattern or icon could go here */}
-                           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-                        </div>
-                    )}
+        <div className="group relative w-full h-full overflow-hidden rounded-2xl bg-slate-900 shadow-sm transition-all hover:shadow-xl">
+            {/* 1. Background Image */}
+            <div className="relative h-full w-full aspect-[4/5] bg-slate-800">
+                {image ? (
+                     <img
+                        src={image}
+                        alt={name}
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                    />
+                ) : (
+                    <div className="h-full w-full flex flex-col items-center justify-center bg-slate-800 text-slate-500 p-8 text-center">
+                        <div className="w-12 h-12 rounded-full bg-slate-700/50 mb-3" />
+                         <span className="text-xs font-medium">No Preview</span>
+                    </div>
+                )}
+                
+                {/* 2. Gradient Overlay for Text Contrast */}
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none" />
+            </div>
 
-                </div>
-                <CardHeader className="p-4 pb-2 pt-0">
-                    <div className="flex justify-between items-start gap-2">
-                        <CardTitle className="text-lg font-bold text-slate-900 line-clamp-1">{name || "Untitled Climb"}</CardTitle>
-                        <Badge className={cn("border-0 shadow-sm transition-colors shrink-0 ", getGradeBadgeStyle(grade))}>
-                            {grade}
-                        </Badge>
-                    </div>
-                    {builder && <p className="text-xs text-muted-foreground font-normal -mt-2">by {builder}</p>}
-                    {tags && tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                            {tags.map(tag => (
-                                <span key={tag} className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-500 border border-slate-200">
-                                    {tag}
-                                </span>
-                            ))}
+            {/* 3. Main Link (Clickable Area) - Covers everything */}
+            <Link href={`/p/${id}`} className="absolute inset-0 z-10" />
+
+            {/* 4. Top Badges (Grade) */}
+            <div className="absolute top-4 right-4 z-20 pointer-events-none">
+                 <Badge className={cn("backdrop-blur-md border-white/10 shadow-lg px-3 py-1 text-sm font-extrabold tracking-tight", getGradeBadgeStyle(grade))}>
+                    {grade}
+                 </Badge>
+            </div>
+
+            {/* 5. Bottom Content Layer */}
+            <div className="absolute bottom-0 inset-x-0 p-5 z-20 pointer-events-none flex flex-col justify-end gap-3">
+                 {/* Content Group */}
+                 <div className="flex items-end justify-between gap-4">
+                     <div className="space-y-1.5 min-w-0 flex-1">
+                        {tags && tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-2 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                                {tags.slice(0, 2).map(tag => (
+                                    <span key={tag} className="text-[10px] uppercase font-bold tracking-wider text-white/90 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        <h3 className="font-bold text-xl leading-tight text-white group-hover:text-blue-200 transition-colors line-clamp-2 text-shadow">
+                            {name || "Untitled Climb"}
+                        </h3>
+                        
+                        <div className="flex items-center gap-2 text-sm text-slate-300 font-medium">
+                            <span className="truncate max-w-[120px]">{builder}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-500/50" />
+                            <div className="flex items-center gap-1 truncate text-slate-400">
+                                <MapPin className="w-3 h-3" />
+                                <span className="truncate max-w-[120px]">{gym}</span>
+                            </div>
                         </div>
-                    )}
-                </CardHeader>
-                <CardContent className="p-4 pt-0 pb-0 mt-auto space-y-3">
-                    <div className="text-sm font-medium text-blue-950 flex items-center justify-between pt-1">
-                        <span className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                            {gym}
-                        </span>
-                        {type && <span className="text-xs text-muted-foreground font-normal">{type}</span>}
-                        <div className="ml-auto">
-                            <LikeButton 
-                                problemId={id} 
-                                initialHasLiked={initialHasLiked} 
-                                initialLikesCount={initialLikesCount}
-                                isLoggedIn={true} // Defaulting to true for now as we don't pass it yet, will fix in page
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </Link>
+                     </div>
+
+                     {/* Like Button - Interactive */}
+                     <div className="pointer-events-auto shrink-0 pb-1">
+                        <LikeButton 
+                            problemId={id} 
+                            initialHasLiked={initialHasLiked} 
+                            initialLikesCount={initialLikesCount}
+                            isLoggedIn={true}
+                            className="text-slate-400 hover:text-white [&_svg]:fill-transparent [&_svg]:stroke-current"
+                        />
+                     </div>
+                 </div>
+            </div>
+        </div>
     )
 }

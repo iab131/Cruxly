@@ -38,3 +38,30 @@ export async function GET() {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
+export async function PATCH(req: Request) {
+    try {
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const { bio } = body;
+
+        // Ensure bio is a string if present
+        if (bio !== undefined && typeof bio !== 'string') {
+             return NextResponse.json({ error: 'Invalid bio format' }, { status: 400 });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: { bio },
+        });
+
+        return NextResponse.json(updatedUser);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}

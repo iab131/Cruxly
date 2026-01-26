@@ -12,9 +12,10 @@ interface LikeButtonProps {
     initialHasLiked: boolean
     initialLikesCount: number
     isLoggedIn: boolean
+    className?: string
 }
 
-export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLoggedIn }: LikeButtonProps) {
+export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLoggedIn, className }: LikeButtonProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [hasLiked, setHasLiked] = useState(initialHasLiked)
@@ -85,23 +86,25 @@ export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLo
                 toggleLike()
             }}
             disabled={isPending}
-            className="flex items-center gap-1.5 group transition-colors"
+            className={cn("flex items-center gap-1.5 group transition-colors", className)}
         >
             <div className={cn(
                 "p-1.5 rounded-full transition-colors",
-                hasLiked ? "bg-red-50" : "group-hover:bg-slate-100"
+                hasLiked ? "bg-transparent" : "group-hover:bg-slate-100/10"
             )}>
                 <Heart
                     className={cn(
                         "w-4 h-4 transition-all",
-                        hasLiked ? "fill-red-500 text-red-500 scale-110" : "text-slate-400 group-hover:text-slate-600"
+                        hasLiked
+                            ? "!fill-red-500 !text-red-500 scale-110"
+                            : "fill-black/20 text-white/50 group-hover:text-white group-hover:fill-black/40"
                     )}
                 />
             </div>
             {likesCount > 0 && (
                 <span className={cn(
-                    "text-xs font-medium tabular-nums transition-colors",
-                    hasLiked ? "text-red-600" : "text-slate-500 group-hover:text-slate-700"
+                    "text-sm font-medium tabular-nums transition-colors",
+                    hasLiked ? "text-red-600" : "text-slate-400 group-hover:text-slate-200"
                 )}>
                     {likesCount}
                 </span>

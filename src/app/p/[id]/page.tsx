@@ -1,15 +1,14 @@
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Heart, Bookmark, Share2, MapPin } from "lucide-react"
 
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 
 import { auth } from "@clerk/nextjs/server"
 import { LikeButton } from "@/components/LikeButton"
 import { CommentSection } from "@/components/comment-section"
+
+import { ProblemHeroImage } from "@/components/problem-hero-image"
 
 export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -60,28 +59,14 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
     return (
         <div className="pb-20">
             {/* Hero Image */}
-            <div className="w-full h-[40vh] md:h-[50vh] bg-slate-100 relative overflow-hidden">
-                <img src={problem.image} alt={problem.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 p-4 md:p-8 text-white w-full max-w-7xl mx-auto flex flex-col items-start gap-2">
-                    <Badge className={cn("text-white font-extrabold text-lg px-4 py-1.5 shadow-lg mb-1", getGradeBadgeStyle(problem.grade))}>
-                        {problem.grade}
-                    </Badge>
-                    <h1 className="text-3xl md:text-5xl font-bold">{problem.name}</h1>
-                    
-                    {problem.tags && problem.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {problem.tags.map(tag => (
-                                <span key={tag} className="px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white/90 font-bold uppercase tracking-wider text-[10px] md:text-xs">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+            <ProblemHeroImage 
+                image={problem.image}
+                name={problem.name}
+                grade={problem.grade}
+                tags={problem.tags}
+            />
 
-            <div className="max-w-4xl mx-auto p-4 md:p-8 -mt-6 relative z-10 bg-white md:bg-transparent md:mt-0 rounded-t-3xl md:rounded-none">
+            <div className="max-w-4xl mx-auto p-4 md:p-8 relative z-10 bg-white md:bg-transparent md:mt-0">
                 <div className="grid md:grid-cols-[2fr_1fr] gap-8">
                     {/* Left Column: Details */}
                     <div className="space-y-8">

@@ -47,8 +47,14 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
     const uniqueProblems = problems.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i)
 
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="max-w-6xl mx-auto px-4 mb-20">
+             {/* Optional Header for "Discovery" vibe */}
+             {/* <div className="flex items-center justify-between mb-8 pt-4 border-b border-slate-100 pb-4">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">Fresh Climbs</h2>
+               
+             </div> */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
                 {uniqueProblems.map((prob) => (
                     <ProblemCard
                         key={prob.id}
@@ -60,7 +66,7 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                 ))}
             </div>
 
-            <div className="flex justify-center py-8">
+            <div className="flex justify-center py-12">
                 {hasMore ? (
                     <Button 
                         variant="ghost" 
@@ -72,7 +78,10 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                         {isLoadingMore ? "Loading..." : "Load More"}
                     </Button>
                 ) : (
-                    <p className="text-slate-400 text-sm">You&apos;ve reached the end!</p>
+                    <div className="flex flex-col items-center gap-2 text-slate-300">
+                         <div className="w-1 h-1 rounded-full bg-current" />
+                         <p className="text-sm">You&apos;re all caught up</p>
+                    </div>
                 )}
             </div>
         </div>
