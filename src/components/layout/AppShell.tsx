@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Compass, PlusSquare, User, Search } from "lucide-react"
+import { Home, Compass, PlusSquare, User, Search, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { SignInButton, SignedOut, SignedIn, UserButton, useUser } from "@clerk/nextjs"
@@ -23,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { label: "Home", href: "/", icon: Home, protected: false },
         { label: "Explore", href: "/search", icon: Search, protected: false },
         { label: "Create", href: "/new", icon: PlusSquare, protected: true },
+        { label: "AI Solve", href: "/solve", icon: Sparkles, protected: true },
         { label: "Profile", href: "/me", icon: User, protected: true },
     ]
 
@@ -150,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* Mobile Bottom Tab Bar */}
             <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-200 z-50 h-16 px-6 pb-safe">
-                <div className="grid grid-cols-4 h-full items-center justify-items-center">
+                <div className="grid grid-cols-5 h-full items-center justify-items-center">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         const commonClasses = "flex items-center justify-center h-full w-full active:scale-95 transition-transform"
