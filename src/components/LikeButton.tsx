@@ -94,17 +94,17 @@ export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLo
             )}>
                 <Heart
                     className={cn(
-                        "w-4 h-4 transition-all",
+                        "w-5 h-5 transition-all",
                         hasLiked
                             ? "!fill-red-500 !text-red-500 scale-110"
-                            : "fill-black/20 text-white/50 group-hover:text-white group-hover:fill-black/40"
+                            : " text-slate-900 group-hover:text-red-400 group-hover:fill-red-400 scale-105"
                     )}
                 />
             </div>
             {likesCount > 0 && (
                 <span className={cn(
                     "text-sm font-medium tabular-nums transition-colors",
-                    hasLiked ? "text-red-600" : "text-slate-400 group-hover:text-slate-200"
+                    hasLiked ? "text-red-600" : "text-slate-900 group-hover:text-slate"
                 )}>
                     {likesCount}
                 </span>

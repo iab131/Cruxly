@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     const navItems = [
         { label: "Home", href: "/", icon: Home, protected: false },
-        { label: "Explore", href: "/", icon: Search, protected: false }, // Re-using Feed for now
+        { label: "Explore", href: "/search", icon: Search, protected: false },
         { label: "Create", href: "/new", icon: PlusSquare, protected: true },
         { label: "Profile", href: "/me", icon: User, protected: true },
     ]
