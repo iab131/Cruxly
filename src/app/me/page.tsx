@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Trash2, MapPin, Settings, Pencil, Check, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { ProblemCard } from "@/components/problem-card"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
@@ -20,6 +21,10 @@ interface Problem {
     type: string
     tags: string[]
     createdAt: string
+    user?: { username: string | null }
+    _count?: { likes: number, comments: number }
+    hasLiked?: boolean
+    hasSaved?: boolean
 }
 
 interface UserData {
@@ -44,16 +49,17 @@ export default function MePage() {
     const [activeTab, setActiveTab] = useState<Tab>("problems")
 
     useEffect(() => {
-        if (isLoaded && isSignedIn) {
-            fetch('/api/me')
-                .then(res => res.json())
-                .then(setData)
-                .catch(console.error)
-                .finally(() => setLoading(false))
-        } else if (isLoaded && !isSignedIn) {
-            setLoading(false)
-        }
-    }, [isLoaded, isSignedIn])
+        if (!isLoaded || !isSignedIn) return
+        
+        // Don't set full page loading for subsequent fetches to avoid flash
+        if (!data) setLoading(true)
+
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(setData)
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }, [isLoaded, isSignedIn, activeTab])
 
     const [problemToDelete, setProblemToDelete] = useState<string | null>(null)
 
@@ -117,7 +123,7 @@ export default function MePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
                 <div className="p-1.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full shadow-xl">
                     {user?.imageUrl ? (
@@ -221,62 +227,41 @@ export default function MePage() {
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {(activeTab === "problems" 
                             ? data?.problems 
                             : activeTab === "likes" 
                                 ? data?.likes.map(l => l.problem) 
                                 : data?.saves.map(s => s.problem)
                         )?.map(problem => (
-                            <Link 
-                                href={`/p/${problem.id}`} 
-                                key={problem.id} 
-                                className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block"
-                            >
-                                <div className="aspect-video bg-slate-100 relative overflow-hidden">
-                                     {problem.image ? (
-                                         <img src={problem.image} alt={problem.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                                     ) : (
-                                         <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">No Image</div>
-                                     )}
-                                     <div className="absolute top-2 right-2">
-                                         <Badge className={cn("border-0 shadow-sm backdrop-blur-md", getGradeBadgeStyle(problem.grade))}>{problem.grade}</Badge>
-                                     </div>
-                                </div>
-                                <div className="p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-lg truncate flex-1 group-hover:text-blue-600 transition-colors">{problem.name}</h3>
-                                        {activeTab === "problems" && (
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault()
-                                                    e.stopPropagation()
-                                                    handleDelete(problem.id)
-                                                }}
-                                                className="text-slate-300 hover:text-red-500 transition-colors p-1 z-10 relative hover:bg-red-50 rounded-md"
-                                                title="Delete Problem"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    
-                                    {problem.tags && problem.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mb-3">
-                                            {problem.tags.map(tag => (
-                                                <span key={tag} className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                                        <MapPin className="w-4 h-4" />
-                                        <span>{problem.gym}</span>
-                                    </div>
-                                </div>
-                            </Link>
+                            <div key={problem.id} className="relative group">
+                                <ProblemCard
+                                    id={problem.id}
+                                    name={problem.name}
+                                    grade={problem.grade}
+                                    gym={problem.gym}
+                                    image={problem.image}
+                                    builder={problem.user?.username || "Unknown"}
+                                    tags={problem.tags}
+                                    initialLikesCount={problem._count?.likes || 0}
+                                    initialHasLiked={problem.hasLiked}
+                                    initialHasSaved={problem.hasSaved}
+                                    isLoggedIn={true}
+                                />
+                                {activeTab === "problems" && (
+                                    <button 
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleDelete(problem.id)
+                                        }}
+                                        className="absolute top-4 left-4 z-30 p-2 bg-black/50 hover:bg-black/80 hover:text-red-400 text-white backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                        title="Delete Problem"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         ))}
                     </div>
                 )}

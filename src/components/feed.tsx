@@ -61,6 +61,7 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                         {...prob}
                         initialLikesCount={prob.likesCount}
                         initialHasLiked={prob.hasLiked}
+                        initialHasSaved={prob.hasSaved}
                         isLoggedIn={isLoggedIn}
                     />
                 ))}

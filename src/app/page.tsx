@@ -24,6 +24,7 @@ export default async function FeedPage() {
         (SELECT COUNT(*)::int FROM "likes" l WHERE l.problem_id = p.id) as "likesCount",
         (SELECT COUNT(*)::int FROM "comments" c WHERE c.problem_id = p.id) as "commentsCount",
         EXISTS(SELECT 1 FROM "likes" l WHERE l.problem_id = p.id AND l.user_id = ${userId || '00000000-0000-0000-0000-000000000000'}) as "hasLiked",
+        EXISTS(SELECT 1 FROM "saves" s WHERE s.problem_id = p.id AND s.user_id = ${userId || '00000000-0000-0000-0000-000000000000'}) as "hasSaved",
         (
             (SELECT COUNT(*) FROM "likes" l WHERE l.problem_id = p.id) * 2 +
             (SELECT COUNT(*) FROM "comments" c WHERE c.problem_id = p.id) * 3 -

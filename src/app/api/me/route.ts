@@ -25,13 +25,22 @@ export async function GET() {
             },
             include: {
                 problems: {
+                    include: {
+                        user: { select: { username: true } },
+                        _count: { select: { likes: true, comments: true } }
+                    },
                     orderBy: {
                         createdAt: 'desc'
                     }
                 },
                 likes: {
                     include: {
-                        problem: true
+                        problem: {
+                            include: {
+                                user: { select: { username: true } },
+                                _count: { select: { likes: true, comments: true } }
+                            }
+                        }
                     },
                     orderBy: {
                         createdAt: 'desc'
@@ -39,7 +48,12 @@ export async function GET() {
                 },
                 saves: {
                     include: {
-                        problem: true
+                        problem: {
+                            include: {
+                                user: { select: { username: true } },
+                                _count: { select: { likes: true, comments: true } }
+                            }
+                        }
                     },
                     orderBy: {
                         createdAt: 'desc'
@@ -48,7 +62,26 @@ export async function GET() {
             }
         });
 
-        return NextResponse.json(dbUser);
+        // Computed fields for hasLiked/hasSaved
+        // We know what I liked/saved from dbUser.likes and dbUser.saves
+        const userWithRelations = dbUser as any;
+        const myLikedProblemIds = new Set(userWithRelations.likes.map((l: any) => l.problemId));
+        const mySavedProblemIds = new Set(userWithRelations.saves.map((s: any) => s.problemId));
+
+        const enhanceProblem = (p: any) => ({
+            ...p,
+            hasLiked: myLikedProblemIds.has(p.id),
+            hasSaved: mySavedProblemIds.has(p.id)
+        });
+
+        const enhancedUser = {
+            ...userWithRelations,
+            problems: userWithRelations.problems.map(enhanceProblem),
+            likes: userWithRelations.likes.map((l: any) => ({ ...l, problem: enhanceProblem(l.problem) })),
+            saves: userWithRelations.saves.map((s: any) => ({ ...s, problem: enhanceProblem(s.problem) }))
+        };
+
+        return NextResponse.json(enhancedUser);
     } catch (error) {
         console.error('Error fetching/syncing user:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

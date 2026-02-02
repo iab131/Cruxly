@@ -15,12 +15,13 @@ interface ProblemCardProps {
     tags?: string[]
     initialHasLiked?: boolean
     initialLikesCount?: number
+    initialHasSaved?: boolean
     isLoggedIn?: boolean 
 }
 
 import { LikeButton } from "./LikeButton"
 
-export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, initialHasLiked = false, initialLikesCount = 0 }: ProblemCardProps) {
+export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, initialHasLiked = false, initialHasSaved = false, initialLikesCount = 0 }: ProblemCardProps) {
     return (
         <div className="group relative w-full h-full overflow-hidden rounded-2xl bg-slate-900 shadow-sm transition-all hover:shadow-xl">
             {/* 1. Background Image */}
@@ -46,12 +47,21 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
             {/* 3. Main Link (Clickable Area) - Covers everything */}
             <Link href={`/p/${id}`} className="absolute inset-0 z-10" />
 
-            {/* 4. Top Badges (Grade) */}
+            {/* 4. Top Badges (Grade) & Save Button */}
             <div className="absolute top-4 right-4 z-20 pointer-events-none">
                  <Badge className={cn("backdrop-blur-md border-white/10 shadow-lg px-3 py-1 text-sm font-extrabold tracking-tight", getGradeBadgeStyle(grade))}>
                     {grade}
                  </Badge>
             </div>
+            {/* <div className="absolute top-4 left-4 z-20 pointer-events-auto">
+                 <SaveButton 
+                    problemId={id} 
+                    initialHasSaved={initialHasSaved} 
+                    isLoggedIn={true}
+                    variant="card"
+                    className="backdrop-blur-md bg-black/20 hover:bg-black/40 p-2 rounded-full transition-colors"
+                 />
+            </div> */}
 
             {/* 5. Bottom Content Layer */}
             <div className="absolute bottom-0 inset-x-0 p-5 z-20 pointer-events-none flex flex-col justify-end gap-3">
@@ -82,8 +92,8 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
                         </div>
                      </div>
 
-                     {/* Like Button - Interactive */}
-                     <div className="pointer-events-auto shrink-0 pb-1">
+                     {/* Actions Group - Interactive */}
+                     <div className="pointer-events-auto shrink-0 pb-1 flex items-center gap-1">
                         <LikeButton 
                             problemId={id} 
                             initialHasLiked={initialHasLiked} 

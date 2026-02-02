@@ -14,8 +14,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const { user } = useUser()
     // Don't show shell on auth pages
     const isAuthPage = pathname?.startsWith("/auth")
+    // Check for Landing Page
+    const isLandingPage = pathname === "/landing"
 
-    if (isAuthPage) {
+    if (isAuthPage || isLandingPage) {
         return <div className="min-h-screen bg-slate-50">{children}</div>
     }
 

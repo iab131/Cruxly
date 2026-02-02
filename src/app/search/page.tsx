@@ -63,7 +63,7 @@ export default function SearchPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                     <Input 
                         placeholder="Search climbs by name, gym, or setter..." 
-                        className="pl-10 h-12 text-lg bg-white shadow-sm"
+                        className="pl-10 h-12 text-lg bg-white shadow-sm rounded-full"
                         value={query}
                         onChange={handleInput}
                         autoFocus
