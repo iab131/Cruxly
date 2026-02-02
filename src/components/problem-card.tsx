@@ -89,7 +89,7 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
                             initialHasLiked={initialHasLiked} 
                             initialLikesCount={initialLikesCount}
                             isLoggedIn={true}
-                            className="text-slate-400 hover:text-white [&_svg]:fill-transparent [&_svg]:stroke-current"
+                            variant="card"
                         />
                      </div>
                  </div>

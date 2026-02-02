@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { label: "Home", href: "/", icon: Home, protected: false },
         { label: "Explore", href: "/search", icon: Search, protected: false },
         { label: "Create", href: "/new", icon: PlusSquare, protected: true },
-        { label: "AI Solve", href: "/solve", icon: Sparkles, protected: true },
+        { label: "AI Solver", href: "/solve", icon: Sparkles, protected: true },
         { label: "Profile", href: "/me", icon: User, protected: true },
     ]
 

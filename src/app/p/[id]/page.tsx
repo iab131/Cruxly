@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 
 import { auth } from "@clerk/nextjs/server"
 import { LikeButton } from "@/components/LikeButton"
+import { SaveButton } from "@/components/save-button"
 import { CommentSection } from "@/components/comment-section"
 
 import { ProblemHeroImage } from "@/components/problem-hero-image"
@@ -34,6 +35,20 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
             }
         })
         hasLiked = !!like
+    }
+
+    // Check if user saved
+    let hasSaved = false
+    if (userId && data) {
+        const save = await prisma.save.findUnique({
+            where: {
+                userId_problemId: {
+                    userId,
+                    problemId: id
+                }
+            }
+        })
+        hasSaved = !!save
     }
 
     if (!data) {
@@ -91,10 +106,13 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
                                 isLoggedIn={!!userId}
                             />
                             {/* Visual separation since LikeButton has its own styling */}
+                            {/* Visual separation since LikeButton has its own styling */}
                             <div className="h-8 w-px bg-slate-200 mx-2 hidden" /> 
-                            <Button variant="outline" size="sm" className="gap-2 text-slate-700">
-                                <Bookmark className="w-4 h-4" /> Save
-                            </Button>
+                            <SaveButton 
+                                problemId={id}
+                                initialHasSaved={hasSaved}
+                                isLoggedIn={!!userId}
+                            />
                             <Button variant="ghost" size="icon" className="ml-auto text-slate-500">
                                 <Share2 className="w-5 h-5" />
                             </Button>

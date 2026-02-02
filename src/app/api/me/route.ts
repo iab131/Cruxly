@@ -28,6 +28,22 @@ export async function GET() {
                     orderBy: {
                         createdAt: 'desc'
                     }
+                },
+                likes: {
+                    include: {
+                        problem: true
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                },
+                saves: {
+                    include: {
+                        problem: true
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
                 }
             }
         });

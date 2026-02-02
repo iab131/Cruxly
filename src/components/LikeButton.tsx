@@ -13,9 +13,17 @@ interface LikeButtonProps {
     initialLikesCount: number
     isLoggedIn: boolean
     className?: string
+    variant?: "default" | "card"
 }
 
-export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLoggedIn, className }: LikeButtonProps) {
+export function LikeButton({ 
+    problemId, 
+    initialHasLiked, 
+    initialLikesCount, 
+    isLoggedIn, 
+    className,
+    variant = "default" 
+}: LikeButtonProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [hasLiked, setHasLiked] = useState(initialHasLiked)
@@ -96,15 +104,23 @@ export function LikeButton({ problemId, initialHasLiked, initialLikesCount, isLo
                     className={cn(
                         "w-5 h-5 transition-all",
                         hasLiked
-                            ? "!fill-red-500 !text-red-500 scale-110"
-                            : " text-slate-900 group-hover:text-red-400 group-hover:fill-red-400 scale-105"
+                            ? "fill-red-500 text-red-500 scale-110"
+                            : cn(
+                                "hover:text-red-400 hover:fill-red-400 scale-105",
+                                variant === "card" ? "text-white" : "text-slate-900"
+                            )
                     )}
                 />
             </div>
             {likesCount > 0 && (
                 <span className={cn(
-                    "text-sm font-medium tabular-nums transition-colors",
-                    hasLiked ? "text-red-600" : "text-slate-900 group-hover:text-slate"
+                    "text-sm font-semibold tabular-nums transition-colors",
+                    hasLiked 
+                        ? "text-red-600" 
+                        : cn(
+                            "hover:text-slate", // This looked weird in original "text-slate", assumed slate-?", I will simplify.
+                            variant === "card" ? "text-white" : "text-slate-900"
+                          )
                 )}>
                     {likesCount}
                 </span>

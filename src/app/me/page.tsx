@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface Problem {
     id: string
     name: string
     grade: string
     gym: string
-    image: string
+    image: string | null
     type: string
     tags: string[]
     createdAt: string
@@ -27,7 +28,11 @@ interface UserData {
     image: string | null
     bio: string | null
     problems: Problem[]
+    likes: { problem: Problem }[]
+    saves: { problem: Problem }[]
 }
+
+type Tab = "problems" | "likes" | "saves"
 
 export default function MePage() {
     const { user, isLoaded, isSignedIn } = useUser()
@@ -36,6 +41,7 @@ export default function MePage() {
     const [loading, setLoading] = useState(true)
     const [isEditingBio, setIsEditingBio] = useState(false)
     const [bioInput, setBioInput] = useState("")
+    const [activeTab, setActiveTab] = useState<Tab>("problems")
 
     useEffect(() => {
         if (isLoaded && isSignedIn) {
@@ -49,15 +55,21 @@ export default function MePage() {
         }
     }, [isLoaded, isSignedIn])
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this problem?")) return
+    const [problemToDelete, setProblemToDelete] = useState<string | null>(null)
+
+    const handleDelete = (id: string) => {
+        setProblemToDelete(id)
+    }
+
+    const confirmDelete = async () => {
+        if (!problemToDelete) return
 
         try {
-            const res = await fetch(`/api/problems/${id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/problems/${problemToDelete}`, { method: 'DELETE' })
             if (res.ok) {
                 setData(prev => prev ? {
                     ...prev,
-                    problems: prev.problems.filter(p => p.id !== id)
+                    problems: prev.problems.filter(p => p.id !== problemToDelete)
                 } : null)
             } else {
                 alert("Failed to delete")
@@ -180,46 +192,73 @@ export default function MePage() {
             </div>
 
             <div>
-                <h2 className="text-2xl font-bold mb-4">Your Problems</h2>
-                {data?.problems.length === 0 ? (
-                    <div className="text-center p-8 bg-slate-50 rounded-xl">
-                        <p className="text-slate-500 mb-4">You haven't posted any problems yet.</p>
-                        <Button asChild>
-                            <Link href="/new">Post a Climb</Link>
-                        </Button>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl">
+                        {(["problems", "likes", "saves"] as const).map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={cn(
+                                    "px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-all",
+                                    activeTab === tab 
+                                        ? "bg-white text-slate-900 shadow-sm" 
+                                        : "text-slate-500 hover:text-slate-900"
+                                )}
+                            >
+                                {tab === "problems" ? "Posted" : tab}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {(!data || (activeTab === "problems" ? data.problems : activeTab === "likes" ? data.likes : data.saves).length === 0) ? (
+                    <div className="text-center p-12 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+                        <p className="text-slate-500 mb-4">No {activeTab} yet.</p>
+                        {activeTab === "problems" && (
+                            <Button asChild>
+                                <Link href="/new">Post a Climb</Link>
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {data?.problems.map(problem => (
+                        {(activeTab === "problems" 
+                            ? data?.problems 
+                            : activeTab === "likes" 
+                                ? data?.likes.map(l => l.problem) 
+                                : data?.saves.map(s => s.problem)
+                        )?.map(problem => (
                             <Link 
                                 href={`/p/${problem.id}`} 
                                 key={problem.id} 
-                                className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow block"
+                                className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 block"
                             >
                                 <div className="aspect-video bg-slate-100 relative overflow-hidden">
                                      {problem.image ? (
-                                         <img src={problem.image} alt={problem.name} className="w-full h-full object-cover" />
+                                         <img src={problem.image} alt={problem.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                                      ) : (
-                                         <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
+                                         <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50">No Image</div>
                                      )}
                                      <div className="absolute top-2 right-2">
-                                         <Badge className={cn("border-0 shadow-sm", getGradeBadgeStyle(problem.grade))}>{problem.grade}</Badge>
+                                         <Badge className={cn("border-0 shadow-sm backdrop-blur-md", getGradeBadgeStyle(problem.grade))}>{problem.grade}</Badge>
                                      </div>
                                 </div>
                                 <div className="p-4">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-lg truncate flex-1">{problem.name}</h3>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.preventDefault()
-                                                e.stopPropagation()
-                                                handleDelete(problem.id)
-                                            }}
-                                            className="text-slate-400 hover:text-red-500 transition-colors p-1 z-10 relative"
-                                            title="Delete Problem"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <h3 className="font-bold text-lg truncate flex-1 group-hover:text-blue-600 transition-colors">{problem.name}</h3>
+                                        {activeTab === "problems" && (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    handleDelete(problem.id)
+                                                }}
+                                                className="text-slate-300 hover:text-red-500 transition-colors p-1 z-10 relative hover:bg-red-50 rounded-md"
+                                                title="Delete Problem"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
                                     
                                     {problem.tags && problem.tags.length > 0 && (
@@ -242,6 +281,17 @@ export default function MePage() {
                     </div>
                 )}
             </div>
+
+            
+            <ConfirmDialog
+                isOpen={!!problemToDelete}
+                onClose={() => setProblemToDelete(null)}
+                onConfirm={confirmDelete}
+                title="Delete Problem"
+                description="Are you sure you want to delete this problem? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
+            />
         </div>
     )
 }
