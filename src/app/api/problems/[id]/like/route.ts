@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { pusherServer } from "@/lib/pusher"
@@ -24,6 +24,18 @@ export async function POST(
 
         if (!problem) {
             return new NextResponse("Problem not found", { status: 404 })
+        }
+
+        // Sync user to DB if not exists (to avoid foreign key violation on Likes)
+        const user = await currentUser();
+        if (user) {
+            const existingUser = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+            const safeUsername = user.username || existingUser?.username || `${user.firstName || "Climber"}_${userId.slice(-4)}`;
+            await prisma.user.upsert({
+                where: { id: userId },
+                update: { username: safeUsername, image: user.imageUrl },
+                create: { id: userId, username: safeUsername, image: user.imageUrl },
+            });
         }
 
         // Check if user already liked

@@ -33,15 +33,18 @@ export async function POST(request: NextRequest) {
         }
 
         // Sync user to DB if not exists
+        const existingUser = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+        const safeUsername = user.username || existingUser?.username || `${user.firstName || "Climber"}_${userId.slice(-4)}`;
+
         const dbUser = await prisma.user.upsert({
             where: { id: userId },
             update: {
-                username: user.username || user.firstName || "Climber",
+                username: safeUsername,
                 image: user.imageUrl,
             },
             create: {
                 id: userId,
-                username: user.username || user.firstName || "Climber",
+                username: safeUsername,
                 image: user.imageUrl,
             },
         });

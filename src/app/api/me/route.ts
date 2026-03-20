@@ -11,16 +11,19 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const existingUser = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+        const safeUsername = user.username || existingUser?.username || `${user.firstName || "Climber"}_${userId.slice(-4)}`;
+
         // Sync user to DB if not exists (or update)
         const dbUser = await prisma.user.upsert({
             where: { id: userId },
             update: {
-                username: user.username || user.firstName || "Climber",
+                username: safeUsername,
                 image: user.imageUrl,
             },
             create: {
                 id: userId,
-                username: user.username || user.firstName || "Climber",
+                username: safeUsername,
                 image: user.imageUrl,
             },
             include: {

@@ -55,9 +55,14 @@ export default function MePage() {
         if (!data) setLoading(true)
 
         fetch('/api/me')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error("Failed to fetch user data")
+                return res.json()
+            })
             .then(setData)
-            .catch(console.error)
+            .catch(err => {
+                console.error(err)
+            })
             .finally(() => setLoading(false))
     }, [isLoaded, isSignedIn, activeTab])
 
@@ -75,7 +80,7 @@ export default function MePage() {
             if (res.ok) {
                 setData(prev => prev ? {
                     ...prev,
-                    problems: prev.problems.filter(p => p.id !== problemToDelete)
+                    problems: prev.problems?.filter(p => p.id !== problemToDelete) || []
                 } : null)
             } else {
                 alert("Failed to delete")
@@ -141,7 +146,7 @@ export default function MePage() {
                 <div className="space-y-4 flex-1">
                     <div>
                         <h1 className="text-3xl font-bold">{user?.username || user?.firstName || "Climber"}</h1>
-                        <p className="text-slate-500">{data?.problems.length || 0} Problems Posted</p>
+                        <p className="text-slate-500">{data?.problems?.length || 0} Problems Posted</p>
                     </div>
 
                     <div className="relative group">
@@ -217,7 +222,7 @@ export default function MePage() {
                     </div>
                 </div>
 
-                {(!data || (activeTab === "problems" ? data.problems : activeTab === "likes" ? data.likes : data.saves).length === 0) ? (
+                {(!data || !(activeTab === "problems" ? data.problems : activeTab === "likes" ? data.likes : data.saves)?.length) ? (
                     <div className="text-center p-12 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
                         <p className="text-slate-500 mb-4">No {activeTab} yet.</p>
                         {activeTab === "problems" && (
@@ -231,8 +236,8 @@ export default function MePage() {
                         {(activeTab === "problems" 
                             ? data?.problems 
                             : activeTab === "likes" 
-                                ? data?.likes.map(l => l.problem) 
-                                : data?.saves.map(s => s.problem)
+                                ? data?.likes?.map(l => l.problem) 
+                                : data?.saves?.map(s => s.problem)
                         )?.map(problem => (
                             <div key={problem.id} className="relative group">
                                 <ProblemCard
