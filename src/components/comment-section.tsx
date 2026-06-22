@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { pusherClient } from "@/lib/pusher"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Loader2, MessageSquare } from "lucide-react"
+import { Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 
 interface CommentUser {
@@ -55,6 +55,7 @@ export function CommentSection({ problemId }: CommentSectionProps) {
     const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
     const [hasMore, setHasMore] = useState(false)
     const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null)
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
 
     const fetchComments = useCallback(async (cursor?: string) => {
         try {
@@ -100,6 +101,23 @@ export function CommentSection({ problemId }: CommentSectionProps) {
         return () => {
             pusherClient.unsubscribe(`problem-${problemId}`)
         }
+    }, [problemId])
+
+    useEffect(() => {
+        function handleBetaCommentCreated(event: Event) {
+            const customEvent = event as CustomEvent<{ problemId: string; comment: Comment }>
+            if (customEvent.detail.problemId !== problemId) return
+
+            setComments(prev => {
+                if (prev.some(c => c.id === customEvent.detail.comment.id)) {
+                    return prev
+                }
+                return [customEvent.detail.comment, ...prev]
+            })
+        }
+
+        window.addEventListener("beta-comment-created", handleBetaCommentCreated)
+        return () => window.removeEventListener("beta-comment-created", handleBetaCommentCreated)
     }, [problemId])
 
     const loadMore = async () => {
@@ -162,11 +180,32 @@ export function CommentSection({ problemId }: CommentSectionProps) {
                 variant="danger"
             />
 
-            <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-slate-500" />
-                <h3 className="text-xl font-bold text-slate-900">
-                    Comments ({comments.length}{hasMore ? "+" : ""})
+            {previewImageUrl && (
+                <div className="fixed inset-0 z-[100] bg-black/95 p-4 flex items-center justify-center">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setPreviewImageUrl(null)}
+                        className="absolute right-4 top-4 text-white hover:bg-white/10"
+                    >
+                        <X className="h-6 w-6" />
+                    </Button>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={previewImageUrl}
+                        alt="Annotated beta"
+                        className="max-h-[90vh] max-w-[95vw] rounded-lg object-contain"
+                    />
+                </div>
+            )}
+
+            <div className="space-y-1">
+                <h3 className="text-base md:text-lg font-bold text-slate-900">
+                    Beta & Comments ({comments.length}{hasMore ? "+" : ""})
                 </h3>
+                <p className="text-xs md:text-sm text-slate-500">
+                    Ask questions, share sequence advice, or draw beta on the route image.
+                </p>
             </div>
 
             <CommentInput problemId={problemId} onCommentAdded={handleCommentAdded} />
@@ -221,12 +260,14 @@ export function CommentSection({ problemId }: CommentSectionProps) {
                                                     className="max-w-full md:max-w-md rounded-lg border border-slate-200 max-h-[400px]"
                                                 />
                                             ) : (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img 
-                                                    src={comment.mediaUrl} 
-                                                    alt="Comment attachment" 
-                                                    className="max-w-full md:max-w-md rounded-lg border border-slate-200 max-h-[400px] object-contain" 
-                                                />
+                                                <button type="button" onClick={() => setPreviewImageUrl(comment.mediaUrl)}>
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img 
+                                                        src={comment.mediaUrl} 
+                                                        alt="Comment attachment" 
+                                                        className="max-w-full md:max-w-md rounded-lg border border-slate-200 max-h-[400px] object-contain" 
+                                                    />
+                                                </button>
                                             )}
                                         </div>
                                     )}

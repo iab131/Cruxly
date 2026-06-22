@@ -14,6 +14,7 @@ interface LikeButtonProps {
     isLoggedIn: boolean
     className?: string
     variant?: "default" | "card"
+    showLabel?: boolean
 }
 
 export function LikeButton({ 
@@ -22,10 +23,11 @@ export function LikeButton({
     initialLikesCount, 
     isLoggedIn, 
     className,
-    variant = "default" 
+    variant = "default",
+    showLabel = false
 }: LikeButtonProps) {
     const router = useRouter()
-    const [isPending, startTransition] = useTransition()
+    const [isPending] = useTransition()
     const [hasLiked, setHasLiked] = useState(initialHasLiked)
     const [likesCount, setLikesCount] = useState(initialLikesCount)
 
@@ -73,12 +75,10 @@ export function LikeButton({
                 }
             } else {
                 // Ensure server state is synced (optional, but good for consistency)
-                const data = await res.json()
-                 // If the server returns different data, we could sync here. 
-                 // For now, keeping the optimistic state is standard.
-                router.refresh() // Soft refresh to update other parts of the UI if needed
+                await res.json()
+                router.refresh()
             }
-        } catch (error) {
+        } catch {
             // Revert on error
             setHasLiked(previousHasLiked)
             setLikesCount(previousLikesCount)
@@ -112,17 +112,15 @@ export function LikeButton({
                     )}
                 />
             </div>
-            {likesCount > 0 && (
+            {(showLabel || likesCount > 0) && (
                 <span className={cn(
                     "text-sm font-semibold tabular-nums transition-colors",
                     hasLiked 
                         ? "text-red-600" 
-                        : cn(
-                            "hover:text-slate", // This looked weird in original "text-slate", assumed slate-?", I will simplify.
-                            variant === "card" ? "text-white" : "text-slate-900"
-                          )
+                        : (variant === "card" ? "text-white" : "text-slate-900")
                 )}>
-                    {likesCount}
+                    {showLabel ? (hasLiked ? "Liked" : "Like") : ""}
+                    {likesCount > 0 ? (showLabel ? ` (${likesCount})` : likesCount) : ""}
                 </span>
             )}
         </button>

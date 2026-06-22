@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
+type FeedProblemRow = {
+    id: string;
+    image: string | null;
+    name: string;
+    grade: string;
+    gym: string;
+    type: string;
+    locationAddress: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    placeId: string | null;
+    createdAt: Date;
+    tags: string[];
+    builder: string | null;
+    builderImage: string | null;
+    likesCount: number | bigint;
+    commentsCount: number | bigint;
+    hasLiked: boolean;
+    score: number;
+}
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -22,6 +43,11 @@ export async function GET(request: Request) {
                 p.name as "name",
                 p.grade,
                 p.gym as "gym",
+                p.type,
+                p.location_address as "locationAddress",
+                p.latitude,
+                p.longitude,
+                p.place_id as "placeId",
                 p.created_at as "createdAt",
                 p.tags,
                 u.username as builder,
@@ -41,13 +67,12 @@ export async function GET(request: Request) {
         `;
 
         // Check if there are more results
-        const nextOffset = offset + limit;
         // Optimization: Instead of separate count query, we could fetch limit + 1
         // But for now, we'll just check if we got full "limit" results, suggesting maybe more exists.
         // A standard approach is returning null if < limit items returned.
         const hasNextPage = Array.isArray(problems) && problems.length === limit;
 
-        const sanitizedProblems = (problems as any[]).map(p => ({
+        const sanitizedProblems = (problems as FeedProblemRow[]).map(p => ({
             ...p,
             likesCount: Number(p.likesCount),
             commentsCount: Number(p.commentsCount),

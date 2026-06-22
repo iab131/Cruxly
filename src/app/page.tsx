@@ -4,6 +4,28 @@ import { Button } from "@/components/ui/button"
 import { auth } from "@clerk/nextjs/server"
 import { SignInButton } from "@clerk/nextjs"
 
+type FeedProblemRow = {
+  id: string
+  image: string | null
+  name: string
+  grade: string
+  gym: string
+  type: string
+  locationAddress: string | null
+  latitude: number | null
+  longitude: number | null
+  placeId: string | null
+  createdAt: Date
+  tags: string[]
+  builder: string | null
+  builderImage: string | null
+  likesCount: number | bigint
+  commentsCount: number | bigint
+  hasLiked: boolean
+  hasSaved: boolean
+  score: number
+}
+
 export default async function FeedPage() {
   const { userId } = await auth();
 
@@ -17,6 +39,11 @@ export default async function FeedPage() {
         p.name as "name",
         p.grade,
         p.gym as "gym",
+        p.type,
+        p.location_address as "locationAddress",
+        p.latitude,
+        p.longitude,
+        p.place_id as "placeId",
         p.created_at as "createdAt",
         p.tags,
         u.username as builder,
@@ -37,7 +64,7 @@ export default async function FeedPage() {
   `;
 
   // Fix serialization for Client Component (Decimal/BigInt to number/string)
-  const sanitizedProblems = (initialProblems as any[]).map(p => ({
+  const sanitizedProblems = (initialProblems as FeedProblemRow[]).map(p => ({
     ...p,
     likesCount: Number(p.likesCount),
     commentsCount: Number(p.commentsCount),
@@ -48,11 +75,6 @@ export default async function FeedPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold text-blue-950 tracking-tight">Discovery Feed</h1>
-        <Button variant="outline" className="hidden md:flex border-slate-200 text-slate-700 hover:text-blue-950 hover:bg-slate-50">Filter Problems</Button>
-      </div>
-
       {!userId && (
         <div className="bg-blue-950 rounded-xl p-6 md:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-blue-900/20">
             <div>
@@ -65,7 +87,6 @@ export default async function FeedPage() {
         </div>
       )}
 
-      {/* @ts-ignore - sanitized */}
       <Feed initialProblems={sanitizedProblems} isLoggedIn={!!userId} />
     </div>
   )

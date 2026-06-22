@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Heart, Bookmark, Share2, MapPin } from "lucide-react"
+import { Share2, MapPin } from "lucide-react"
 
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
@@ -10,6 +10,7 @@ import { SaveButton } from "@/components/save-button"
 import { CommentSection } from "@/components/comment-section"
 
 import { ProblemHeroImage } from "@/components/problem-hero-image"
+import { LocationDistance } from "@/components/location-distance"
 
 export default async function ProblemDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -60,6 +61,9 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
         name: data.name,
         grade: data.grade,
         gym: data.gym,
+        locationAddress: data.locationAddress,
+        latitude: data.latitude,
+        longitude: data.longitude,
         builder: data.user?.username || "Unknown",
         image: data.image ?? undefined,
         description: data.description || "No description available.",
@@ -75,82 +79,98 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
         <div className="pb-20">
             {/* Hero Image */}
             <ProblemHeroImage 
+                problemId={id}
                 image={problem.image}
                 name={problem.name}
                 grade={problem.grade}
                 tags={problem.tags}
             />
 
-            <div className="max-w-4xl mx-auto p-4 md:p-8 relative z-10 bg-white md:bg-transparent md:mt-0">
-                <div className="grid md:grid-cols-[2fr_1fr] gap-8">
-                    {/* Left Column: Details */}
-                    <div className="space-y-8">
-                        {/* Meta Info */}
-                        <div className="flex flex-wrap gap-4 items-center text-slate-600 mb-4">
-                            <div className="flex items-center gap-2">
-                                <MapPin className="w-5 h-5 text-blue-600" />
-                                <span className="font-medium text-slate-900">{problem.gym}</span>
-                            </div>
-                            <div className="hidden md:block w-1 h-1 bg-slate-300 rounded-full" />
-                            <div>
-                                Set by <span className="font-medium text-slate-900">{problem.builder}</span>
-                            </div>
-                        </div>
-
+            <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-8 space-y-6">
+                {/* Main Content Split Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
+                    {/* Left Column: Actions and Description Stack */}
+                    <div className="md:col-span-2 space-y-6">
                         {/* Actions Row */}
-                        <div className="flex items-start gap-4 py-4 border-y border-slate-100">
-                           <LikeButton 
-                                problemId={id} 
-                                initialHasLiked={hasLiked} 
+                        <div className="flex items-center gap-4 min-h-[36px]">
+                            <LikeButton
+                                problemId={id}
+                                initialHasLiked={hasLiked}
                                 initialLikesCount={problem.stats.likes}
                                 isLoggedIn={!!userId}
+                                showLabel={true}
+                                className="hover:opacity-85 transition-opacity"
                             />
-                            {/* Visual separation since LikeButton has its own styling */}
-                            {/* Visual separation since LikeButton has its own styling */}
-                            <div className="h-8 w-px bg-slate-200 mx-2 hidden" /> 
-                            <SaveButton 
+                            <SaveButton
                                 problemId={id}
                                 initialHasSaved={hasSaved}
                                 isLoggedIn={!!userId}
+                                className="hover:opacity-85 transition-opacity"
                             />
-                            <Button variant="ghost" size="icon" className="ml-auto text-slate-500">
-                                <Share2 className="w-5 h-5" />
-                            </Button>
+                            <div className="ml-auto flex items-center gap-3">
+                                <span className="text-xs md:text-sm font-semibold text-slate-500">
+                                    Set by <span className="font-bold text-slate-900">{problem.builder}</span>
+                                </span>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="gap-1.5 text-slate-500 hover:text-blue-950 font-semibold text-sm hover:bg-slate-100/50 rounded-lg h-9 px-3"
+                                >
+                                    <Share2 className="w-4 h-4" />
+                                    <span>Share</span>
+                                </Button>
+                            </div>
                         </div>
 
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900 mb-2">Description</h2>
-                            <p className="text-slate-600 leading-relaxed">
+                        {/* Description */}
+                        <div className="space-y-2">
+                            <h3 className="text-base md:text-lg font-bold text-slate-900">Description</h3>
+                            <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
                                 {problem.description}
                             </p>
                         </div>
-
-                        <div className="pt-8 border-t border-slate-100">
-                            <CommentSection problemId={id} />
-                        </div>
                     </div>
 
-                    {/* Right Column: Stats (Sidebar style on desktop) */}
-                    <div className="space-y-6">
-                        <div className="bg-slate-50 rounded-xl p-6 space-y-4">
-                            <h3 className="font-bold text-slate-900">Statistics</h3>
-                            <div className="grid grid-cols-3 md:grid-cols-1 gap-4">
-                                <div className="text-center md:text-left md:flex md:justify-between md:items-center">
-                                    <span className="text-sm text-slate-500 block">Likes</span>
-                                    <span className="font-bold text-slate-900 text-lg">{problem.stats.likes}</span>
-                                </div>
-                                <div className="text-center md:text-left md:flex md:justify-between md:items-center">
-                                    <span className="text-sm text-slate-500 block">Attempts</span>
-                                    <span className="font-bold text-slate-900 text-lg">{problem.stats.attempts}</span>
-                                </div>
-                                <div className="text-center md:text-left md:flex md:justify-between md:items-center">
-                                    <span className="text-sm text-slate-500 block">Completion</span>
-                                    <span className="font-bold text-green-600 text-lg">{problem.stats.completionRate}</span>
-                                </div>
+                    {/* Right Column: Location Gym Info */}
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 min-h-[36px]">
+                                <MapPin className="h-4 w-4 text-blue-700 shrink-0" />
+                                <h4 className="text-sm md:text-base font-semibold text-slate-950 leading-none truncate">
+                                    {problem.gym}
+                                </h4>
+                            </div>
+                            {problem.locationAddress && (
+                                <p className="text-xs text-slate-500 pl-6">
+                                    <a
+                                        href={
+                                            problem.latitude != null && problem.longitude != null
+                                                ? `https://www.google.com/maps/search/?api=1&query=${problem.latitude},${problem.longitude}`
+                                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(problem.locationAddress)}`
+                                        }
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:text-blue-700 hover:underline transition-colors"
+                                    >
+                                        {problem.locationAddress}
+                                    </a>
+                                </p>
+                            )}
+                            <div className="pt-1 pl-6">
+                                <LocationDistance
+                                    latitude={problem.latitude}
+                                    longitude={problem.longitude}
+                                    className="inline-flex items-center gap-1 rounded-full bg-blue-50/70 border border-blue-100/50 px-2.5 py-0.5 text-[10px] md:text-xs font-semibold text-blue-700"
+                                />
                             </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Beta & Comments Section */}
+                <section className="py-2">
+                    <CommentSection problemId={id} />
+                </section>
             </div>
         </div>
     )

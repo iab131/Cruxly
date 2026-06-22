@@ -1,15 +1,13 @@
 "use client"
 
-import { useUser, UserButton, SignInButton, SignOutButton, useClerk } from "@clerk/nextjs"
+import { useUser, SignInButton, SignOutButton, useClerk } from "@clerk/nextjs"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Trash2, MapPin, Settings, Pencil, Check, X } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Trash2, Settings, Pencil, Check, X } from "lucide-react"
 import { ProblemCard } from "@/components/problem-card"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface Problem {
@@ -17,6 +15,9 @@ interface Problem {
     name: string
     grade: string
     gym: string
+    locationAddress?: string | null
+    latitude?: number | null
+    longitude?: number | null
     image: string | null
     type: string
     tags: string[]
@@ -51,9 +52,6 @@ export default function MePage() {
     useEffect(() => {
         if (!isLoaded || !isSignedIn) return
         
-        // Don't set full page loading for subsequent fetches to avoid flash
-        if (!data) setLoading(true)
-
         fetch('/api/me')
             .then(res => {
                 if (!res.ok) throw new Error("Failed to fetch user data")
@@ -245,6 +243,9 @@ export default function MePage() {
                                     name={problem.name}
                                     grade={problem.grade}
                                     gym={problem.gym}
+                                    locationAddress={problem.locationAddress}
+                                    latitude={problem.latitude}
+                                    longitude={problem.longitude}
                                     image={problem.image}
                                     builder={problem.user?.username || "Unknown"}
                                     tags={problem.tags}

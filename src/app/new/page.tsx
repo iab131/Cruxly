@@ -11,6 +11,7 @@ import { toast } from "sonner"
 
 import { GradeSelector } from "@/components/GradeSelector"
 import { DisciplineSelector } from "@/components/DisciplineSelector"
+import { LocationPicker } from "@/components/map/LocationPicker"
 
 export default function CreateProblemPage() {
     const [file, setFile] = useState<File | null>(null)
@@ -60,9 +61,6 @@ export default function CreateProblemPage() {
             formData.set('tags', JSON.stringify([]))
         }
         
-        // Add gym search value if it's not in the form naturally (it is an input, so it should be)
-        // Adjust for other fields if needed.
-
         try {
             const res = await fetch('/api/problems', {
                 method: 'POST',
@@ -71,14 +69,14 @@ export default function CreateProblemPage() {
 
             if (!res.ok) {
                 const data = await res.json()
-                throw new Error(data.error || 'Failed to create problem')
+                toast.error(data.error || 'Failed to create problem')
+                return
             }
 
             const problem = await res.json()
             router.push(`/p/${problem.id}`)
         } catch (error) {
-            console.error(error)
-            alert(error instanceof Error ? error.message : "Something went wrong")
+            toast.error(error instanceof Error ? error.message : "Something went wrong")
         } finally {
             setUploading(false)
         }
@@ -146,10 +144,7 @@ export default function CreateProblemPage() {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="gym">Location / Gym</Label>
-                        <Input id="gym" name="gym" placeholder="Search gym..." required className="bg-white" />
-                    </div>
+                    <LocationPicker />
 
                     <div className="space-y-2">
                         <Label htmlFor="description">Description & Beta</Label>

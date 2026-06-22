@@ -1,18 +1,14 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { ProblemCard } from "@/components/problem-card"
-import _ from "lodash" // Assuming lodash is installed for debounce, if not we can write a simple one
-
-interface SearchPageProps {
-    // any server props if needed
-}
+import _ from "lodash"
 
 export default function SearchPage() {
     const [query, setQuery] = useState("")
-    const [results, setResults] = useState<any[]>([])
+    const [results, setResults] = useState<React.ComponentProps<typeof ProblemCard>[]>([])
     const [loading, setLoading] = useState(false)
     const [hasSearched, setHasSearched] = useState(false)
 
@@ -78,7 +74,7 @@ export default function SearchPage() {
                      </div>
                 ) : hasSearched ? (
                     results.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {results.map(prob => (
                                 <ProblemCard 
                                     key={prob.id} 

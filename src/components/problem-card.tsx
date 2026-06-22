@@ -3,12 +3,16 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 import { MapPin } from "lucide-react"
+import { LocationDistance } from "@/components/location-distance"
 
 interface ProblemCardProps {
     id: string
     name: string
     grade: string
     gym: string
+    locationAddress?: string | null
+    latitude?: number | null
+    longitude?: number | null
     image: string | null
     type?: string
     builder?: string
@@ -21,7 +25,7 @@ interface ProblemCardProps {
 
 import { LikeButton } from "./LikeButton"
 
-export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, initialHasLiked = false, initialHasSaved = false, initialLikesCount = 0 }: ProblemCardProps) {
+export function ProblemCard({ id, name, grade, gym, locationAddress, latitude, longitude, image, builder, initialHasLiked = false, initialLikesCount = 0 }: ProblemCardProps) {
     return (
         <div className="group relative w-full h-full overflow-hidden rounded-2xl bg-slate-900 shadow-sm transition-all hover:shadow-xl">
             {/* 1. Background Image */}
@@ -40,8 +44,8 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
                 )}
                 
                 {/* 2. Gradient Overlay for Text Contrast */}
-                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/95 via-black/55 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none" />
             </div>
 
             {/* 3. Main Link (Clickable Area) - Covers everything */}
@@ -64,44 +68,40 @@ export function ProblemCard({ id, name, grade, gym, image, type, builder, tags, 
             </div> */}
 
             {/* 5. Bottom Content Layer */}
-            <div className="absolute bottom-0 inset-x-0 p-5 z-20 pointer-events-none flex flex-col justify-end gap-3">
-                 {/* Content Group */}
-                 <div className="flex items-end justify-between gap-4">
-                     <div className="space-y-1.5 min-w-0 flex-1">
-                        {tags && tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-2 opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                                {tags.slice(0, 2).map(tag => (
-                                    <span key={tag} className="text-[10px] uppercase font-bold tracking-wider text-white/90 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        <h3 className="font-bold text-xl leading-tight text-white group-hover:text-blue-200 transition-colors line-clamp-2 text-shadow">
+            <div className="absolute bottom-0 inset-x-0 z-20 p-4 md:p-5 pointer-events-none">
+                 <div className="min-w-0 pr-14 space-y-1.5">
+                        <h3 className="font-bold text-2xl md:text-xl leading-tight text-white group-hover:text-blue-200 transition-colors line-clamp-2 text-shadow">
                             {name || "Untitled Climb"}
                         </h3>
-                        
-                        <div className="flex items-center gap-2 text-sm text-slate-300 font-medium">
-                            <span className="truncate max-w-[120px]">{builder}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-500/50" />
-                            <div className="flex items-center gap-1 truncate text-slate-400">
-                                <MapPin className="w-3 h-3" />
-                                <span className="truncate max-w-[120px]">{gym}</span>
-                            </div>
-                        </div>
-                     </div>
 
-                     {/* Actions Group - Interactive */}
-                     <div className="pointer-events-auto shrink-0 pb-1 flex items-center gap-1">
-                        <LikeButton 
-                            problemId={id} 
-                            initialHasLiked={initialHasLiked} 
-                            initialLikesCount={initialLikesCount}
-                            isLoggedIn={true}
-                            variant="card"
-                        />
-                     </div>
+                        {builder && builder !== "Unknown" && (
+                            <p className="truncate text-sm font-medium text-slate-300">
+                                by {builder}
+                            </p>
+                        )}
+
+                        <div className="space-y-1 text-sm font-medium text-slate-300">
+                            <div className="flex min-w-0 items-center gap-1.5" title={locationAddress || gym}>
+                                <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-200" />
+                                <span className="truncate">{gym}</span>
+                            </div>
+                            <LocationDistance
+                                latitude={latitude}
+                                longitude={longitude}
+                                className="flex items-center gap-1.5 text-blue-100"
+                            />
+                        </div>
+                 </div>
+
+                 <div className="absolute bottom-4 right-4 pointer-events-auto">
+                    <LikeButton 
+                        problemId={id} 
+                        initialHasLiked={initialHasLiked} 
+                        initialLikesCount={initialLikesCount}
+                        isLoggedIn={true}
+                        variant="card"
+                        className="rounded-full bg-black/35 px-2 py-1 backdrop-blur-md hover:bg-black/50"
+                    />
                  </div>
             </div>
         </div>

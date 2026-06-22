@@ -53,15 +53,19 @@ model Comment {
 }
 
 model Problem {
-  id          String   @id @default(uuid())
-  name        String
-  grade       String
-  gym         String
-  image       String?  @map("image_url")
-  type        String
-  description String?
-  tags        String[] @default([])
-  createdAt   DateTime @default(now()) @map("created_at")
+  id              String   @id @default(uuid())
+  name            String
+  grade           String
+  gym             String
+  locationAddress String?  @map("location_address")
+  latitude        Float?
+  longitude       Float?
+  placeId         String?  @map("place_id")
+  image           String?  @map("image_url")
+  type            String
+  description     String?
+  tags            String[] @default([])
+  createdAt       DateTime @default(now()) @map("created_at")
 
   userId   String    @map("user_id")
   user     User      @relation(fields: [userId], references: [id])

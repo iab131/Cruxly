@@ -1,23 +1,26 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
 import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ProblemImageAnnotator } from "@/components/problem-image-annotator"
 
 interface ProblemHeroImageProps {
+    problemId: string
     image?: string
     name: string
     grade: string
     tags: string[]
 }
 
-export function ProblemHeroImage({ image, name, grade, tags }: ProblemHeroImageProps) {
+export function ProblemHeroImage({ problemId, image, name, grade, tags }: ProblemHeroImageProps) {
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
     const [scale, setScale] = useState(1)
     
     const toggleZoom = () => {
@@ -31,12 +34,40 @@ export function ProblemHeroImage({ image, name, grade, tags }: ProblemHeroImageP
     // Reset zoom when closing
     const close = () => {
         setIsOpen(false)
+        setIsEditing(false)
         setScale(1)
     }
 
+    useEffect(() => {
+        if (!isOpen) return
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                close()
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [isOpen])
+
+    useEffect(() => {
+        function handleOpenAnnotator(event: Event) {
+            const customEvent = event as CustomEvent<{ problemId: string }>
+            if (customEvent.detail.problemId !== problemId || !image) return
+
+            setScale(1)
+            setIsOpen(true)
+            setIsEditing(true)
+        }
+
+        window.addEventListener("open-route-annotator", handleOpenAnnotator)
+        return () => window.removeEventListener("open-route-annotator", handleOpenAnnotator)
+    }, [image, problemId])
+
     if (!image) {
         return (
-             <div className="w-full h-[40vh] md:h-[50vh] bg-slate-100 relative overflow-hidden flex items-center justify-center">
+             <div className="w-full h-[32vh] md:h-[40vh] bg-slate-100 relative overflow-hidden flex items-center justify-center">
                  {/* Back Button */}
                  <Button
   size="icon"
@@ -70,7 +101,7 @@ export function ProblemHeroImage({ image, name, grade, tags }: ProblemHeroImageP
     return (
         <>
             <div 
-                className="w-full h-[40vh] md:h-[50vh] bg-slate-100 relative overflow-hidden cursor-pointer group"
+                className="w-full h-[32vh] md:h-[40vh] bg-slate-100 relative overflow-hidden cursor-pointer group"
                 onClick={() => setIsOpen(true)}
             >
                 {/* Back Button */}
@@ -119,70 +150,92 @@ export function ProblemHeroImage({ image, name, grade, tags }: ProblemHeroImageP
             {/* Lightbox Modal */}
             {isOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
-                    {/* Toolbar */}
-                    <div className="flex items-center justify-between p-4 text-white z-10 sticky top-0 bg-gradient-to-b from-black/50 to-transparent">
-                        <div className="text-sm opacity-80 pl-2">{name}</div>
-                        <div className="flex items-center gap-2">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-white hover:bg-white/10" 
-                                onClick={(e) => { e.stopPropagation(); setScale(Math.max(0.5, scale - 0.5)); }}
-                            >
-                                <ZoomOut className="w-5 h-5" />
-                            </Button>
-                             <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-white hover:bg-white/10" 
-                                onClick={(e) => { e.stopPropagation(); setScale(1); }}
-                                title="Reset Zoom"
-                            >
-                                <RotateCcw className="w-5 h-5" />
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-white hover:bg-white/10" 
-                                onClick={(e) => { e.stopPropagation(); setScale(scale + 0.5); }}
-                            >
-                                <ZoomIn className="w-5 h-5" />
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-white hover:bg-white/10 ml-2 rounded-full h-10 w-10 bg-white/10 hover:bg-white/20 border border-white/10" 
-                                onClick={(e) => { e.stopPropagation(); close(); }}
-                            >
-                                <X className="w-6 h-6" />
-                            </Button>
-                        </div>
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4 text-center text-sm text-white/70">
+                        {name}
                     </div>
 
-                    {/* Image Area - Scrollable if zoomed */}
-                    <div 
-                        className="flex-1 overflow-auto flex items-center justify-center p-4 cursor-grab active:cursor-grabbing"
-                        onClick={toggleZoom}
-                    >
-                         <img 
-                            src={image} 
-                            alt={name} 
-                            style={{ 
-                                transform: `scale(${scale})`,
-                                transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                                transformOrigin: 'center center'
-                            }}
-                            className={cn(
-                                "max-w-full max-h-[85vh] object-contain shadow-2xl",
-                                scale > 1 ? "" : "w-auto h-auto"
-                            )}
-                            onClick={(e) => e.stopPropagation()} 
-                         />
-                    </div>
-                    
-                    <div className="p-4 text-center text-white/50 text-xs pb-6">
-                        Click image to expand • Use controls to zoom
-                    </div>
+                    {isEditing ? (
+                        <ProblemImageAnnotator
+                            problemId={problemId}
+                            image={image}
+                            name={name}
+                            onCancel={() => setIsEditing(false)}
+                            onPosted={close}
+                        />
+                    ) : (
+                        <>
+                            {/* Image Area - Scrollable if zoomed */}
+                            <div 
+                                className="flex-1 overflow-auto flex items-center justify-center p-4 cursor-grab active:cursor-grabbing"
+                                onClick={toggleZoom}
+                            >
+                                 <img 
+                                    src={image} 
+                                    alt={name} 
+                                    style={{ 
+                                        transform: `scale(${scale})`,
+                                        transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                        transformOrigin: 'center center'
+                                    }}
+                                    className={cn(
+                                        "max-w-full max-h-[85vh] object-contain shadow-2xl",
+                                        scale > 1 ? "" : "w-auto h-auto"
+                                    )}
+                                    onClick={(e) => e.stopPropagation()} 
+                                 />
+                            </div>
+                            
+                            <div className="p-4 text-center text-white/50 text-xs pb-6">
+                                Press Esc to close
+                            </div>
+
+                            <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/55 p-1.5 text-white shadow-2xl backdrop-blur-md">
+                                <Button 
+                                    variant="ghost" 
+                                    className="rounded-full text-white hover:bg-white/10" 
+                                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); setScale(1); }}
+                                >
+                                    Annotate route
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-white hover:bg-white/10" 
+                                    onClick={(e) => { e.stopPropagation(); setScale(Math.max(0.5, scale - 0.5)); }}
+                                    aria-label="Zoom out"
+                                >
+                                    <ZoomOut className="w-5 h-5" />
+                                </Button>
+                                 <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-white hover:bg-white/10" 
+                                    onClick={(e) => { e.stopPropagation(); setScale(1); }}
+                                    title="Reset Zoom"
+                                >
+                                    <RotateCcw className="w-5 h-5" />
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-white hover:bg-white/10" 
+                                    onClick={(e) => { e.stopPropagation(); setScale(scale + 0.5); }}
+                                    aria-label="Zoom in"
+                                >
+                                    <ZoomIn className="w-5 h-5" />
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-white hover:bg-white/10" 
+                                    onClick={(e) => { e.stopPropagation(); close(); }}
+                                    aria-label="Close"
+                                >
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
         </>

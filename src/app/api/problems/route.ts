@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
         const name = formData.get('name') as string;
         const grade = formData.get('grade') as string;
         const gym = formData.get('gym') as string;
+        const locationAddress = formData.get('locationAddress') as string | null;
+        const latitudeValue = formData.get('latitude') as string | null;
+        const longitudeValue = formData.get('longitude') as string | null;
+        const placeId = formData.get('placeId') as string | null;
         const type = formData.get('type') as string || 'boulder'; // Default to boulder if missing
         const description = formData.get('description') as string;
         const image = formData.get('image') as File;
@@ -67,6 +71,16 @@ export async function POST(request: NextRequest) {
 
         if (!name || !grade || !gym || !image) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const latitude = latitudeValue ? Number(latitudeValue) : null;
+        const longitude = longitudeValue ? Number(longitudeValue) : null;
+
+        if (
+            (latitude !== null && (Number.isNaN(latitude) || latitude < -90 || latitude > 90)) ||
+            (longitude !== null && (Number.isNaN(longitude) || longitude < -180 || longitude > 180))
+        ) {
+            return NextResponse.json({ error: 'Invalid location coordinates' }, { status: 400 });
         }
 
         // Validation
@@ -98,6 +112,10 @@ export async function POST(request: NextRequest) {
                 name,
                 grade,
                 gym,
+                locationAddress: locationAddress || null,
+                latitude,
+                longitude,
+                placeId: placeId || null,
                 type,
                 description,
                 image: imageUrl,

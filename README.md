@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Copy `.env.example` to `.env.local` and fill in the values you need. `NEXT_PUBLIC_GEOAPIFY_API_KEY` is optional; it enables location autocomplete, while manual address/latitude/longitude entry works without any map API key.
+
 First, run the development server:
 
 ```bash
