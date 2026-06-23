@@ -16,6 +16,7 @@ import { LocationPicker } from "@/components/map/LocationPicker"
 export default function CreateProblemPage() {
     const [file, setFile] = useState<File | null>(null)
     const [grade, setGrade] = useState("")
+    const [showGradeError, setShowGradeError] = useState(false)
     const [discipline, setDiscipline] = useState("boulder")
     const [boulderStyles, setBoulderStyles] = useState<string[]>([])
     const [preview, setPreview] = useState<string | null>(null)
@@ -44,7 +45,7 @@ export default function CreateProblemPage() {
             return
         }
         if (!grade) {
-            toast.error("Please select a grade")
+            setShowGradeError(true)
             return
         }
 
@@ -132,7 +133,18 @@ export default function CreateProblemPage() {
 
                     <div className="space-y-2">
                         <Label>Difficulty</Label>
-                        <GradeSelector value={grade} onChange={setGrade} />
+                        <GradeSelector 
+                            value={grade} 
+                            onChange={(val) => {
+                                setGrade(val)
+                                if (val) setShowGradeError(false)
+                            }} 
+                        />
+                        {showGradeError && (
+                            <p className="text-red-500 text-xs mt-1 font-semibold animate-in fade-in duration-200">
+                                Please select a grade
+                            </p>
+                        )}
                     </div>
                     
                     <div className="    ">

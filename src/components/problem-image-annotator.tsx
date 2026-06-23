@@ -20,6 +20,11 @@ type Annotation =
     | { type: "circle"; start: Point; end: Point; color: string; width: number }
     | { type: "text"; point: Point; text: string; color: string }
 
+type BetaStep = {
+    annotations: Annotation[]
+    content: string
+}
+
 interface ProblemImageAnnotatorProps {
     problemId: string
     image: string
@@ -108,6 +113,11 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     const [color, setColor] = useState(COLORS[0])
     const [strokeWidth, setStrokeWidth] = useState(5)
     const [labelText, setLabelText] = useState("")
+    
+    // Step state configuration
+    const [steps, setSteps] = useState<BetaStep[]>([{ annotations: [], content: "" }])
+    const [activeStepIndex, setActiveStepIndex] = useState(0)
+
     const [annotations, setAnnotations] = useState<Annotation[]>([])
     const [draftAnnotation, setDraftAnnotation] = useState<Annotation | null>(null)
     const [isDrawing, setIsDrawing] = useState(false)
@@ -154,6 +164,76 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
         }
     }
 
+    const switchStep = (newIndex: number) => {
+        // Save current active step state
+        const updated = [...steps]
+        updated[activeStepIndex] = { annotations, content }
+        setSteps(updated)
+
+        // Load targeted step state
+        setAnnotations(updated[newIndex].annotations)
+        setContent(updated[newIndex].content)
+        setActiveStepIndex(newIndex)
+    }
+
+    const addStep = () => {
+        const updated = [...steps]
+        updated[activeStepIndex] = { annotations, content }
+        
+        updated.push({ annotations: [], content: "" })
+        setSteps(updated)
+
+        setAnnotations([])
+        setContent("")
+        setActiveStepIndex(updated.length - 1)
+    }
+
+    const removeStep = (indexToRemove: number) => {
+        if (steps.length <= 1) return
+
+        const updated = steps.filter((_, i) => i !== indexToRemove)
+        setSteps(updated)
+
+        let nextIndex = activeStepIndex
+        if (activeStepIndex === indexToRemove) {
+            nextIndex = Math.max(0, indexToRemove - 1)
+        } else if (activeStepIndex > indexToRemove) {
+            nextIndex = activeStepIndex - 1
+        }
+
+        setAnnotations(updated[nextIndex].annotations)
+        setContent(updated[nextIndex].content)
+        setActiveStepIndex(nextIndex)
+    }
+
+    const handleContentChange = (val: string) => {
+        setContent(val)
+        setSteps(prev => {
+            const next = [...prev]
+            next[activeStepIndex] = { annotations, content: val }
+            return next
+        })
+    }
+
+    const handleUndo = () => {
+        const updated = annotations.slice(0, -1)
+        setAnnotations(updated)
+        setSteps(prev => {
+            const next = [...prev]
+            next[activeStepIndex] = { annotations: updated, content }
+            return next
+        })
+    }
+
+    const handleClear = () => {
+        setAnnotations([])
+        setSteps(prev => {
+            const next = [...prev]
+            next[activeStepIndex] = { annotations: [], content }
+            return next
+        })
+    }
+
     function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
         event.preventDefault()
         event.currentTarget.setPointerCapture(event.pointerId)
@@ -165,7 +245,13 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                 toast.error("Add label text first")
                 return
             }
-            setAnnotations((current) => [...current, { type: "text", point, text, color }])
+            const updated = [...annotations, { type: "text", point, text, color } as Annotation]
+            setAnnotations(updated)
+            setSteps(prev => {
+                const next = [...prev]
+                next[activeStepIndex] = { annotations: updated, content }
+                return next
+            })
             return
         }
 
@@ -190,12 +276,18 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     function finishDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
         if (!isDrawing || !draftAnnotation) return
         event.preventDefault()
-        setAnnotations((current) => [...current, draftAnnotation])
+        const updated = [...annotations, draftAnnotation]
+        setAnnotations(updated)
         setDraftAnnotation(null)
         setIsDrawing(false)
+        setSteps(prev => {
+            const next = [...prev]
+            next[activeStepIndex] = { annotations: updated, content }
+            return next
+        })
     }
 
-    async function exportAnnotatedImage() {
+    async function exportAnnotatedImage(stepAnnotations: Annotation[]) {
         const sourceImage = imageRef.current
         const annotationCanvas = canvasRef.current
         if (!sourceImage || !annotationCanvas) throw new Error("Image is not ready")
@@ -209,18 +301,22 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
         ctx.fillStyle = "#020617"
         ctx.fillRect(0, 0, output.width, output.height)
         ctx.drawImage(sourceImage, 0, 0, output.width, output.height)
-        annotations.forEach((annotation) => drawAnnotation(ctx, annotation))
+        stepAnnotations.forEach((annotation) => drawAnnotation(ctx, annotation))
 
         return new Promise<Blob>((resolve, reject) => {
             output.toBlob((blob) => {
                 if (blob) resolve(blob)
                 else reject(new Error("Could not create image file"))
-            }, "image/png", 0.95)
+            }, "image/jpeg", 0.85)
         })
     }
 
     async function postBeta() {
-        if (!content.trim() && annotations.length === 0) {
+        const finalSteps = [...steps]
+        finalSteps[activeStepIndex] = { annotations, content }
+
+        const hasAnyContent = finalSteps.some(s => s.content.trim() || s.annotations.length > 0)
+        if (!hasAnyContent) {
             toast.error("Add a note or an annotation first")
             return
         }
@@ -228,11 +324,17 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
         setIsPosting(true)
         try {
             const formData = new FormData()
-            formData.set("content", content.trim())
 
-            if (annotations.length > 0) {
-                const blob = await exportAnnotatedImage()
-                formData.set("image", new File([blob], `beta-${problemId}.png`, { type: "image/png" }))
+            for (let i = 0; i < finalSteps.length; i++) {
+                const step = finalSteps[i]
+                const stepNum = i + 1
+                
+                // Append text description for this step
+                formData.append("contents", step.content.trim())
+
+                // Export this step's canvas
+                const blob = await exportAnnotatedImage(step.annotations)
+                formData.append("images", new File([blob], `beta-${problemId}-step-${stepNum}.jpg`, { type: "image/jpeg" }))
             }
 
             const response = await fetch(`/api/problems/${problemId}/beta`, {
@@ -242,17 +344,18 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.error || "Failed to post beta")
+                throw new Error(data.error || "Failed to post beta guide")
             }
 
             const comment = await response.json()
             window.dispatchEvent(new CustomEvent("beta-comment-created", {
                 detail: { problemId, comment },
             }))
-            toast.success("Beta posted")
+
+            toast.success("Beta guide posted!")
             onPosted?.()
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to post beta")
+            toast.error(error instanceof Error ? error.message : "Failed to post beta guide")
         } finally {
             setIsPosting(false)
         }
@@ -326,7 +429,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={() => setAnnotations((current) => current.slice(0, -1))}
+                        onClick={handleUndo}
                         disabled={annotations.length === 0}
                         className="text-white hover:bg-white/15"
                     >
@@ -337,7 +440,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={() => setAnnotations([])}
+                        onClick={handleClear}
                         disabled={annotations.length === 0}
                         className="text-white hover:bg-white/15"
                     >
@@ -351,6 +454,48 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                 </div>
             </div>
 
+            {/* Step Navigation Bar */}
+            <div className="flex flex-wrap items-center gap-2 px-1 py-1 text-white border-b border-white/5 select-none">
+                <span className="text-xs font-semibold text-white/50 mr-1">Beta Guide Steps:</span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                    {steps.map((s, index) => (
+                        <div key={index} className="flex items-center bg-white/5 rounded-md border border-white/10 overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => switchStep(index)}
+                                className={cn(
+                                    "px-2.5 py-1 text-xs font-bold transition-colors",
+                                    activeStepIndex === index 
+                                        ? "bg-blue-600 text-white" 
+                                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                                )}
+                            >
+                                Step {index + 1}
+                            </button>
+                            {steps.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeStep(index)}
+                                    className="px-1.5 py-1 text-white/40 hover:text-red-400 hover:bg-red-500/10 border-l border-white/10 transition-colors"
+                                    title="Delete step"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={addStep}
+                        className="h-7 text-xs text-blue-400 hover:text-blue-300 hover:bg-white/5 border border-dashed border-blue-500/30 rounded-md gap-1"
+                    >
+                        + Add Step
+                    </Button>
+                </div>
+            </div>
+
             <div ref={containerRef} className="relative min-h-0 flex-1 overflow-auto rounded-lg bg-black/40">
                 <div className="flex min-h-full items-center justify-center p-3">
                     <div className="relative inline-block">
@@ -358,6 +503,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                         <img
                             ref={imageRef}
                             src={editableImage}
+                            crossOrigin="anonymous"
                             alt={name}
                             onLoad={syncCanvasSize}
                             onError={() => toast.error("Could not load this image for editing")}
@@ -379,8 +525,8 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
             <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <Textarea
                     value={content}
-                    onChange={(event) => setContent(event.target.value)}
-                    placeholder="Explain your beta, sequence, or advice..."
+                    onChange={(event) => handleContentChange(event.target.value)}
+                    placeholder="Explain your beta, sequence, or advice for this step..."
                     maxLength={500}
                     className="min-h-[76px] resize-none border-white/15 bg-white/95 text-slate-900"
                 />

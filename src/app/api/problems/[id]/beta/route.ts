@@ -16,14 +16,11 @@ export async function POST(
 
         const { id } = await params
         const formData = await request.formData()
-        const content = String(formData.get("content") || "").trim()
-        const image = formData.get("image")
+        const contents = formData.getAll("contents").map(c => String(c).trim())
+        const images = formData.getAll("images")
 
-        if (content.length > 500) {
-            return NextResponse.json({ error: "Content exceeds 500 characters" }, { status: 400 })
-        }
-
-        if (!(image instanceof File) && !content) {
+        const hasContent = contents.some(c => c)
+        if (images.length === 0 && !hasContent) {
             return NextResponse.json({ error: "Beta must have text or an annotated image" }, { status: 400 })
         }
 
@@ -43,24 +40,27 @@ export async function POST(
             })
         }
 
-        let mediaUrl: string | null = null
-        if (image instanceof File) {
-            if (!image.type.startsWith("image/")) {
-                return NextResponse.json({ error: "Annotated beta must be an image" }, { status: 400 })
-            }
+        const mediaUrls: string[] = []
+        for (const image of images) {
+            if (image instanceof File) {
+                if (!image.type.startsWith("image/")) {
+                    return NextResponse.json({ error: "Annotated beta must be an image" }, { status: 400 })
+                }
 
-            if (image.size > 10 * 1024 * 1024) {
-                return NextResponse.json({ error: "Annotated image must be under 10MB" }, { status: 400 })
-            }
+                if (image.size > 10 * 1024 * 1024) {
+                    return NextResponse.json({ error: "Annotated image must be under 10MB" }, { status: 400 })
+                }
 
-            mediaUrl = await uploadToR2(image, "beta")
+                const url = await uploadToR2(image, "beta")
+                mediaUrls.push(url)
+            }
         }
 
         const comment = await prisma.comment.create({
             data: {
-                content: content || null,
-                mediaUrl,
-                mediaType: mediaUrl ? "image" : null,
+                content: JSON.stringify(contents),
+                mediaUrl: mediaUrls.length > 0 ? JSON.stringify(mediaUrls) : null,
+                mediaType: mediaUrls.length > 0 ? "gallery" : null,
                 userId,
                 problemId: id,
             },

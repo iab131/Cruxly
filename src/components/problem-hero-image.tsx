@@ -39,6 +39,20 @@ export function ProblemHeroImage({ problemId, image, name, grade, tags }: Proble
     }
 
     useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = "hidden"
+            document.documentElement.style.overflow = "hidden"
+        } else {
+            document.body.style.overflow = ""
+            document.documentElement.style.overflow = ""
+        }
+        return () => {
+            document.body.style.overflow = ""
+            document.documentElement.style.overflow = ""
+        }
+    }, [isOpen])
+
+    useEffect(() => {
         if (!isOpen) return
 
         function handleKeyDown(event: KeyboardEvent) {
@@ -150,8 +164,11 @@ export function ProblemHeroImage({ problemId, image, name, grade, tags }: Proble
             {/* Lightbox Modal */}
             {isOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4 text-center text-sm text-white/70">
-                        {name}
+                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4 text-center text-sm text-white/70 flex flex-col items-center">
+                        <span className="font-semibold">{name}</span>
+                        <span className="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider font-semibold">
+                            Press Esc to close
+                        </span>
                     </div>
 
                     {isEditing ? (
@@ -178,15 +195,11 @@ export function ProblemHeroImage({ problemId, image, name, grade, tags }: Proble
                                         transformOrigin: 'center center'
                                     }}
                                     className={cn(
-                                        "max-w-full max-h-[85vh] object-contain shadow-2xl",
+                                        "max-w-full max-h-[75vh] object-contain shadow-2xl",
                                         scale > 1 ? "" : "w-auto h-auto"
                                     )}
                                     onClick={(e) => e.stopPropagation()} 
                                  />
-                            </div>
-                            
-                            <div className="p-4 text-center text-white/50 text-xs pb-6">
-                                Press Esc to close
                             </div>
 
                             <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/55 p-1.5 text-white shadow-2xl backdrop-blur-md">

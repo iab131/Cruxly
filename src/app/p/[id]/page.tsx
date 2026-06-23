@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
-import { Share2, MapPin } from "lucide-react"
+import { MapPin } from "lucide-react"
+import { ShareButton } from "@/components/share-button"
 
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
@@ -111,14 +111,7 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
                                 <span className="text-xs md:text-sm font-semibold text-slate-500">
                                     Set by <span className="font-bold text-slate-900">{problem.builder}</span>
                                 </span>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="gap-1.5 text-slate-500 hover:text-blue-950 font-semibold text-sm hover:bg-slate-100/50 rounded-lg h-9 px-3"
-                                >
-                                    <Share2 className="w-4 h-4" />
-                                    <span>Share</span>
-                                </Button>
+                                <ShareButton />
                             </div>
                         </div>
 

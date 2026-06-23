@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const name = formData.get('name') as string;
         const grade = formData.get('grade') as string;
-        const gym = formData.get('gym') as string;
+        const gym = (formData.get('gym') as string | null)?.trim() || 'Outdoor';
         const locationAddress = formData.get('locationAddress') as string | null;
         const latitudeValue = formData.get('latitude') as string | null;
         const longitudeValue = formData.get('longitude') as string | null;
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             console.warn("Failed to parse tags", e);
         }
 
-        if (!name || !grade || !gym || !image) {
+        if (!name || !grade || !image) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 

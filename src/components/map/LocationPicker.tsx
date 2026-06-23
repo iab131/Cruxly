@@ -213,7 +213,6 @@ export function LocationPicker() {
             id="gym"
             name="gym"
             placeholder={canAutocomplete ? "e.g. Hub Climbing, Boulder Parc, Joe Rockhead's" : "Gym name"}
-            required
             className="bg-white pl-10 pr-10"
             value={location.gym}
             autoComplete="off"

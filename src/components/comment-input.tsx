@@ -18,7 +18,7 @@ interface Comment {
     id: string
     content: string | null
     mediaUrl: string | null
-    mediaType: "image" | "video" | null
+    mediaType: "image" | "video" | "gallery" | null
     createdAt: string
     user: CommentUser
 }
@@ -76,33 +76,20 @@ export function CommentInput({ problemId, onCommentAdded }: CommentInputProps) {
 
             // 1. Upload Media if present
             if (mediaFile) {
-                const presignRes = await fetch("/api/upload/presign", {
+                const formData = new FormData()
+                formData.append("file", mediaFile)
+
+                const uploadRes = await fetch("/api/upload", {
                     method: "POST",
-                    body: JSON.stringify({
-                        filename: mediaFile.name,
-                        contentType: mediaFile.type,
-                        size: mediaFile.size,
-                    }),
-                })
-
-                if (!presignRes.ok) throw new Error("Failed to get upload URL")
-                const { uploadUrl, publicUrl } = await presignRes.json()
-                console.log("Upload URL:", uploadUrl)
-
-                const uploadRes = await fetch(uploadUrl, {
-                    method: "PUT",
-                    body: mediaFile,
-                    headers: {
-                        "Content-Type": mediaFile.type,
-                        "Access-Control-Allow-Origin": "*", // Attempting to help, though server must allow it
-                    },
+                    body: formData,
                 })
 
                 if (!uploadRes.ok) {
-                    console.error("Upload failed:", uploadRes.status, uploadRes.statusText)
-                    throw new Error("Failed to upload file")
+                    const errorData = await uploadRes.json()
+                    throw new Error(errorData.error || "Failed to upload file")
                 }
                 
+                const { publicUrl } = await uploadRes.json()
                 mediaUrl = publicUrl
                 mediaType = mediaFile.type.startsWith("image/") ? "image" : "video"
             }
@@ -156,6 +143,27 @@ export function CommentInput({ problemId, onCommentAdded }: CommentInputProps) {
                 <AvatarFallback>{user.username?.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">
+                {/* Media Preview */}
+                {previewUrl && (
+                    <div className="flex items-center gap-2 mb-1 p-1 bg-slate-100/50 border border-slate-200/50 rounded-xl w-fit">
+                        <div className="relative inline-block">
+                            {mediaFile?.type.startsWith("image/") ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={previewUrl} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-slate-200" />
+                            ) : (
+                                <video src={previewUrl} className="h-16 w-16 object-cover rounded-lg border border-slate-200" />
+                            )}
+                            <button 
+                                onClick={clearMedia}
+                                className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white rounded-full p-1 hover:bg-red-500 transition-colors shadow-sm"
+                            >
+                                <span className="sr-only">Remove</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div className="relative">
                     <Textarea
                         value={content}
@@ -164,27 +172,6 @@ export function CommentInput({ problemId, onCommentAdded }: CommentInputProps) {
                         className="min-h-[96px] resize-none bg-slate-50 border border-slate-200 focus-visible:bg-white focus-visible:ring-slate-300 pb-12 rounded-xl transition-all"
                         maxLength={500}
                     />
-                    
-                    {/* Media Preview */}
-                    {previewUrl && (
-                        <div className="absolute bottom-14 left-2.5 z-10">
-                            <div className="relative inline-block">
-                                {mediaFile?.type.startsWith("image/") ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={previewUrl} alt="Preview" className="h-14 w-14 object-cover rounded-md border border-slate-200" />
-                                ) : (
-                                    <video src={previewUrl} className="h-14 w-14 object-cover rounded-md border border-slate-200" />
-                                )}
-                                <button 
-                                    onClick={clearMedia}
-                                    className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white rounded-full p-0.5 hover:bg-red-500 transition-colors"
-                                >
-                                    <span className="sr-only">Remove</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                </button>
-                            </div>
-                        </div>
-                    )}
 
                     <div className="absolute bottom-2.5 left-2.5 flex gap-2">
                         <label className="cursor-pointer p-1.5 rounded-full hover:bg-slate-200/60 text-slate-500 transition-colors">
