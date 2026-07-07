@@ -1,6 +1,4 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { v4 as uuidv4 } from 'uuid';
 
 function isConfigured(value: string | undefined) {
@@ -29,6 +27,12 @@ function isR2Configured() {
     );
 }
 
+function assertR2Configured() {
+    if (!isR2Configured()) {
+        throw new Error("Cloudflare R2 is not configured. Set R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, and R2_PUBLIC_URL.");
+    }
+}
+
 export const r2 = new S3Client({
     region: "auto",
     endpoint: getR2Endpoint(),
@@ -43,12 +47,7 @@ export async function uploadToR2(file: File, folder: string = 'uploads'): Promis
     const ext = file.name.split('.').pop();
     const key = `${folder}/${uuidv4()}.${ext}`;
 
-    if (!isR2Configured()) {
-        const uploadPath = path.join(process.cwd(), "public", "uploads", key);
-        await mkdir(path.dirname(uploadPath), { recursive: true });
-        await writeFile(uploadPath, buffer);
-        return `/uploads/${key}`;
-    }
+    assertR2Configured();
 
     await r2.send(
         new PutObjectCommand({
