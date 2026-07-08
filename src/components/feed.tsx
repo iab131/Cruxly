@@ -1,10 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { ProblemCard } from "@/components/problem-card"
+import { FeaturedProblemCard } from "@/components/featured-problem-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, SlidersHorizontal, X } from "lucide-react"
+import { Flame, Loader2, SlidersHorizontal, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type FeedProblem = {
@@ -116,6 +118,25 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
         setLocationFilter("")
     }
 
+    // Story-style rail: the setters behind the current feed, deduped
+    const setters = useMemo(() => {
+        const seen = new Set<string>()
+        const out: { name: string; image: string | null }[] = []
+        for (const p of uniqueProblems) {
+            const name = p.builder
+            if (!name || name === "Unknown" || seen.has(name)) continue
+            seen.add(name)
+            out.push({ name, image: p.builderImage ?? null })
+            if (out.length >= 12) break
+        }
+        return out
+    }, [uniqueProblems])
+
+    // Spotlight the top-ranked climb ("Today's Proj") on the unfiltered feed.
+    const showSpotlight = !hasActiveFilters && filteredProblems.length > 1
+    const spotlight = showSpotlight ? filteredProblems[0] : null
+    const gridProblems = spotlight ? filteredProblems.slice(1) : filteredProblems
+
     return (
         <div className="max-w-6xl mx-auto px-4 mb-20">
             {/* Sticky feed header with quick category rail — floating liquid-glass island */}
@@ -205,15 +226,72 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
-                {filteredProblems.map((prob, index) => (
+            {/* Setter rail — the people behind this feed */}
+            {setters.length > 1 && (
+                <div className="mb-8 animate-rise-in">
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                        Setters on the wall
+                        <span className="h-px flex-1 bg-slate-200" />
+                    </div>
+                    <div className="no-scrollbar flex gap-4 overflow-x-auto pb-1">
+                        {setters.map((setter) => (
+                            <Link
+                                key={setter.name}
+                                href={`/u/${setter.name}`}
+                                className="group/setter flex w-16 shrink-0 flex-col items-center gap-1.5"
+                            >
+                                <span className="rounded-full bg-gradient-to-tr from-blue-950 via-blue-600 to-sky-400 p-[2.5px] transition-transform group-hover/setter:scale-105 group-active/setter:scale-95">
+                                    {setter.image ? (
+                                        <img
+                                            src={setter.image}
+                                            alt={setter.name}
+                                            className="h-14 w-14 rounded-full border-2 border-white object-cover"
+                                        />
+                                    ) : (
+                                        <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white bg-blue-950 text-sm font-bold uppercase text-white">
+                                            {setter.name.slice(0, 2)}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="w-full truncate text-center text-xs font-medium text-slate-600 group-hover/setter:text-blue-950 transition-colors">
+                                    {setter.name}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Today's Proj — the top-ranked climb right now */}
+            {spotlight && (
+                <div className="mb-10 animate-rise-in">
+                    <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-blue-950">
+                        <Flame className="h-3.5 w-3.5 text-orange-500" />
+                        Today&apos;s Proj
+                        <span className="h-px flex-1 bg-slate-200" />
+                    </div>
+                    <FeaturedProblemCard
+                        {...spotlight}
+                        likesCount={spotlight.likesCount}
+                        commentsCount={spotlight.commentsCount}
+                        hasLiked={spotlight.hasLiked}
+                        isLoggedIn={isLoggedIn}
+                    />
+                </div>
+            )}
+
+            {/* Masonry: route photos are portrait shots of walls — keep their
+                natural shape and pack columns instead of forcing one crop. */}
+            <div className="columns-1 sm:columns-2 xl:columns-3 gap-6">
+                {gridProblems.map((prob, index) => (
                     <div
                         key={prob.id}
-                        className="animate-rise-in"
+                        className="mb-6 break-inside-avoid animate-rise-in"
                         style={{ animationDelay: `${(index % 12) * 45}ms` }}
                     >
                         <ProblemCard
                             {...prob}
+                            natural
                             initialLikesCount={prob.likesCount}
                             initialHasLiked={prob.hasLiked}
                             initialHasSaved={prob.hasSaved}
@@ -225,7 +303,7 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
 
             {filteredProblems.length === 0 && (
                 <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">
-                    No problems match those filters.
+                    No climbs match these filters yet.
                 </div>
             )}
 

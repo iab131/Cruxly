@@ -76,7 +76,7 @@ export default async function FeedPage() {
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
       {!userId && (
-        <div className="bg-blue-950 rounded-xl p-6 md:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-blue-900/20">
+        <div className="bg-blue-950 rounded-3xl p-6 md:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-blue-900/20">
             <div>
                 <h2 className="text-xl font-bold mb-1">Join the Cruxly Community</h2>
                 <p className="text-blue-200">Share your sends, track your progress, and find new projects.</p>

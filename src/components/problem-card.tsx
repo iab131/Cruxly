@@ -25,6 +25,8 @@ interface ProblemCardProps {
     initialLikesCount?: number
     initialHasSaved?: boolean
     isLoggedIn?: boolean
+    /** Keep the photo's natural aspect ratio (for masonry feeds) instead of the uniform 4:5 crop. */
+    natural?: boolean
 }
 
 export function ProblemCard({
@@ -42,22 +44,34 @@ export function ProblemCard({
     hideAuthor = false,
     initialHasLiked = false,
     initialLikesCount = 0,
+    natural = false,
 }: ProblemCardProps) {
     const hasBuilder = !hideAuthor && Boolean(builder && builder !== "Unknown")
 
     return (
-        <div className="group relative isolate w-full h-full transform-gpu overflow-hidden rounded-4xl bg-slate-900 shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5">
+        <div className={cn(
+            "group relative isolate w-full transform-gpu overflow-hidden rounded-4xl bg-slate-900 shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5",
+            !natural && "h-full"
+        )}>
             {/* 1. Background Image */}
-            <div className="relative h-full w-full aspect-[4/5] bg-slate-800">
+            <div className={cn("relative w-full bg-slate-800", !natural && "h-full aspect-[4/5]")}>
                 {image ? (
                     <img
                         src={image}
                         alt={name}
                         loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-95 group-hover:opacity-100"
+                        className={cn(
+                            "w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 opacity-95 group-hover:opacity-100",
+                            // Natural mode: follow the route photo's own shape, clamped
+                            // so one extreme pano or sliver can't wreck the column rhythm.
+                            natural ? "h-auto min-h-[300px] max-h-[640px]" : "h-full"
+                        )}
                     />
                 ) : (
-                    <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 text-slate-500 p-8 text-center">
+                    <div className={cn(
+                        "h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 text-slate-500 p-8 text-center",
+                        natural && "aspect-[4/5]"
+                    )}>
                         <div className="w-12 h-12 rounded-full bg-slate-700/50 mb-3" />
                         <span className="text-xs font-medium">No Preview</span>
                     </div>

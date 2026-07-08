@@ -161,9 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 "pb-20 md:pb-0", // Space for mobile nav
                 "pt-14 md:pt-0" // Space for mobile header
             )}>
-                <div className="max-w-4xl mx-auto w-full">
-                    {children}
-                </div>
+                {children}
             </main>
 
             {/* Mobile Bottom Tab Bar */}

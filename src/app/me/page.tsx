@@ -22,7 +22,7 @@ interface Problem {
     type: string
     tags: string[]
     createdAt: string
-    user?: { username: string | null }
+    user?: { username: string | null, image: string | null }
     _count?: { likes: number, comments: number }
     hasLiked?: boolean
     hasSaved?: boolean
@@ -261,6 +261,7 @@ export default function MePage() {
                                     longitude={problem.longitude}
                                     image={problem.image}
                                     builder={problem.user?.username || "Unknown"}
+                                    builderImage={problem.user?.image ?? null}
                                     hideAuthor={activeTab === "problems"}
                                     tags={problem.tags}
                                     commentsCount={problem._count?.comments}
@@ -276,10 +277,11 @@ export default function MePage() {
                                             e.stopPropagation()
                                             handleDelete(problem.id)
                                         }}
-                                        className="absolute bottom-4 right-4 z-30 p-2 bg-black/50 hover:bg-black/80 hover:text-red-400 text-white backdrop-blur-md ring-1 ring-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
-                                        title="Delete Problem"
+                                        aria-label="Delete climb"
+                                        title="Delete climb"
+                                        className="glass-chip absolute top-4 left-4 z-30 flex h-9 w-9 items-center justify-center rounded-full text-white transition-all duration-200 hover:border-red-400/60 hover:bg-red-500/85 active:scale-90 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="h-4 w-4" />
                                     </button>
                                 )}
                             </div>

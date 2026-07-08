@@ -29,7 +29,7 @@ export async function GET() {
             include: {
                 problems: {
                     include: {
-                        user: { select: { username: true } },
+                        user: { select: { username: true, image: true } },
                         _count: { select: { likes: true, comments: true } }
                     },
                     orderBy: {
@@ -40,7 +40,7 @@ export async function GET() {
                     include: {
                         problem: {
                             include: {
-                                user: { select: { username: true } },
+                                user: { select: { username: true, image: true } },
                                 _count: { select: { likes: true, comments: true } }
                             }
                         }
@@ -53,7 +53,7 @@ export async function GET() {
                     include: {
                         problem: {
                             include: {
-                                user: { select: { username: true } },
+                                user: { select: { username: true, image: true } },
                                 _count: { select: { likes: true, comments: true } }
                             }
                         }

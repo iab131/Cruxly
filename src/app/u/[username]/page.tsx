@@ -40,8 +40,12 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
 
     const user = {
         username: data.username,
+        image: data.image,
         bio: data.bio || "No bio yet.",
-        stats: { posted: data.problems.length, likes: 0 },
+        stats: {
+            posted: data.problems.length,
+            likes: data.problems.reduce((sum, p) => sum + p._count.likes, 0),
+        },
         climbs: data.problems.map(p => ({
             id: p.id,
             name: p.name,
@@ -62,7 +66,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
             {/* Header */}
             <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
                 <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src={user.image ?? undefined} alt={user.username ?? "Climber"} />
                     <AvatarFallback>{(user.username || "U").substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>

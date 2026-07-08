@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Route } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface GalleryCardStackProps {
@@ -54,32 +54,17 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
     const showNavigation = urls.length > 1
 
     return (
-        <div className="mt-3 space-y-4">
-            <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
-                    Beta Guide
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    {urls.length} step{urls.length !== 1 ? "s" : ""}
-                </span>
+        <div className="mt-3 space-y-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <Route className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Beta Guide</span>
+                <span aria-hidden="true">·</span>
+                <span>{urls.length} step{urls.length !== 1 ? "s" : ""}</span>
             </div>
 
-            <div className="flex items-center justify-center gap-2 sm:gap-4 py-4 select-none min-h-[300px] xs:min-h-[360px] sm:min-h-[420px]">
-                {showNavigation && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handlePrev}
-                        disabled={activeIndex === 0}
-                        className="h-8 w-8 rounded-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm shrink-0"
-                        aria-label="Previous step"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                )}
-
-                <div className="relative w-[190px] xs:w-[230px] sm:w-[260px] h-[260px] xs:h-[320px] sm:h-[370px] flex items-center justify-center">
+            {/* Stack sits in the comment flow (left-aligned), controls tucked beneath */}
+            <div className="w-fit select-none space-y-3 pl-2 sm:pl-4">
+                <div className="relative w-[190px] xs:w-[230px] sm:w-[260px] h-[260px] xs:h-[320px] sm:h-[370px]">
                     {urls.map((url, idx) => {
                         const stepNote = contents[idx] || ""
                         const style = {
@@ -121,40 +106,51 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
                     })}
                 </div>
 
+                {/* Compact carousel controls: prev · dots · next */}
                 {showNavigation && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleNext}
-                        disabled={activeIndex === urls.length - 1}
-                        className="h-8 w-8 rounded-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm shrink-0"
-                        aria-label="Next step"
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-center gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handlePrev}
+                            disabled={activeIndex === 0}
+                            className="h-7 w-7 rounded-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm shrink-0"
+                            aria-label="Previous step"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1.5">
+                            {urls.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setActiveIndex(idx)}
+                                    aria-label={`Go to step ${idx + 1}`}
+                                    aria-current={idx === activeIndex}
+                                    className={cn(
+                                        "h-1.5 rounded-full transition-all duration-300",
+                                        idx === activeIndex
+                                            ? "w-5 bg-blue-700 dark:bg-blue-500"
+                                            : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
+                                    )}
+                                />
+                            ))}
+                        </div>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleNext}
+                            disabled={activeIndex === urls.length - 1}
+                            className="h-7 w-7 rounded-full border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm shrink-0"
+                            aria-label="Next step"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
                 )}
             </div>
-            
-            {showNavigation && (
-                <div className="flex items-center justify-center gap-1.5">
-                    {urls.map((_, idx) => (
-                        <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setActiveIndex(idx)}
-                            aria-label={`Go to step ${idx + 1}`}
-                            aria-current={idx === activeIndex}
-                            className={cn(
-                                "h-1.5 rounded-full transition-all duration-300",
-                                idx === activeIndex
-                                    ? "w-5 bg-blue-700 dark:bg-blue-500"
-                                    : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
-                            )}
-                        />
-                    ))}
-                </div>
-            )}
         </div>
     )
 }
