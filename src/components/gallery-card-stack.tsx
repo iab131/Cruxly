@@ -67,7 +67,7 @@ export function GalleryCardStack({ urls, contents }: GalleryCardStackProps) {
 
     return (
         <div className="mt-3 space-y-3">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 sm:justify-start">
                 <Route className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Beta Guide</span>
                 <span aria-hidden="true">·</span>
@@ -75,7 +75,7 @@ export function GalleryCardStack({ urls, contents }: GalleryCardStackProps) {
             </div>
 
             {/* Stack sits in the comment flow (left-aligned), controls tucked beneath */}
-            <div className="w-fit select-none space-y-3 pl-2 sm:pl-4">
+            <div className="mx-auto w-fit select-none space-y-3 sm:mx-0 sm:pl-4">
                 <div className="relative w-[190px] xs:w-[230px] sm:w-[260px] h-[260px] xs:h-[320px] sm:h-[370px]">
                     {urls.map((url, idx) => {
                         const stepNote = contents[idx] || ""

@@ -753,9 +753,9 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     }
 
     return (
-        <div className="min-h-0 flex-1 overflow-hidden p-3 md:p-4">
-            <div className="relative flex h-full min-h-[620px] overflow-hidden rounded-2xl bg-black/40">
-                <div className="flex min-h-full flex-1 items-center justify-center overflow-auto p-3">
+        <div className="min-h-0 flex-1 overflow-hidden p-2 md:p-4">
+            <div className="relative flex h-full min-h-[560px] flex-col gap-2 overflow-y-auto rounded-2xl bg-black/40 p-2 md:min-h-[620px] md:overflow-hidden md:p-0">
+                <div className="flex min-h-[320px] flex-1 items-center justify-center overflow-auto md:min-h-full md:p-3">
                     <div className="relative inline-block">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -765,7 +765,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                             alt={name}
                             onLoad={syncCanvasSize}
                             onError={() => toast.error("Could not load this image for editing")}
-                            className="max-h-[72vh] max-w-full select-none object-contain"
+                            className="max-h-[54vh] max-w-full select-none object-contain sm:max-h-[62vh] md:max-h-[72vh]"
                             draggable={false}
                         />
                         <canvas
@@ -780,7 +780,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                             onPointerCancel={finishDrawing}
                         />
                         {!isPreview && tool === "pose" && !currentPose && (
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+                            <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-3">
                                 <div className="rounded-full border border-white/15 bg-black/60 px-4 py-2 text-sm font-semibold text-white/90 shadow-lg backdrop-blur">
                                     Tap the wall to place the climber pose.
                                 </div>
@@ -791,8 +791,8 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
 
                 {!isPreview && (
                     <>
-                        <div className="absolute left-3 top-16 z-20 rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur">
-                            <div className="flex flex-wrap items-center gap-1">
+                        <div className="relative z-20 rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur md:absolute md:left-3 md:right-auto md:top-16">
+                            <div className="flex items-center gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
                                 {tools.map((option) => (
                                     <button
                                         key={option.value}
@@ -800,7 +800,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                                         title={option.label}
                                         onClick={() => setTool(option.value)}
                                         className={cn(
-                                            "flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-colors",
+                                            "flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-colors",
                                             tool === option.value ? "bg-white text-slate-950" : "text-white/70 hover:bg-white/10 hover:text-white"
                                         )}
                                     >
@@ -811,7 +811,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                             </div>
                         </div>
 
-                        <div className="absolute left-3 top-[8.25rem] z-20 w-[min(20rem,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-white/[0.07] p-3 text-white shadow-xl backdrop-blur">
+                        <div className="relative z-20 max-h-[45vh] overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.07] p-3 text-white shadow-xl backdrop-blur [-ms-overflow-style:none] [scrollbar-width:none] md:absolute md:left-3 md:right-auto md:top-[8.25rem] md:max-h-[calc(100%-12rem)] md:w-[min(20rem,calc(100%-1.5rem))] [&::-webkit-scrollbar]:hidden">
                             <div className="mb-3 flex items-start justify-between gap-3">
                                 <div>
                                     <h3 className="text-sm font-bold">{tool === "pose" ? "Pose" : tool === "text" ? "Text" : "Draw"}</h3>
@@ -943,7 +943,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                             </div>
                         </div>
 
-                        <div className="absolute left-1/2 top-3 z-20 flex max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="relative z-20 flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur [-ms-overflow-style:none] [scrollbar-width:none] md:absolute md:bottom-auto md:left-1/2 md:top-3 md:max-w-[min(36rem,calc(100%-2rem))] md:-translate-x-1/2 [&::-webkit-scrollbar]:hidden">
                             {steps.map((_, index) => (
                                 <div
                                     key={index}
@@ -983,24 +983,24 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                     </>
                 )}
 
-                <div className="absolute left-3 top-3 z-30 flex items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1 text-white shadow-xl backdrop-blur">
+                <div className="relative z-30 flex w-fit items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1 text-white shadow-xl backdrop-blur md:absolute md:left-3 md:top-3">
                     <button
                         type="button"
                         onClick={() => setIsPreview(false)}
-                        className={cn("rounded-xl px-3 py-2 text-xs font-semibold transition-colors", !isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
+                        className={cn("rounded-xl px-2.5 py-2 text-xs font-semibold transition-colors sm:px-3", !isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
                     >
                         Edit
                     </button>
                     <button
                         type="button"
                         onClick={() => setIsPreview(true)}
-                        className={cn("rounded-xl px-3 py-2 text-xs font-semibold transition-colors", isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
+                        className={cn("rounded-xl px-2.5 py-2 text-xs font-semibold transition-colors sm:px-3", isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
                     >
                         Preview
                     </button>
                 </div>
 
-                <div className="absolute right-3 top-3 z-30 flex flex-wrap items-center justify-end gap-1.5">
+                <div className="relative z-30 flex flex-wrap items-center justify-start gap-1.5 md:absolute md:right-3 md:top-3 md:justify-end">
                     {!isPreview && (
                         <>
                             <button
@@ -1008,20 +1008,20 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                                 onClick={handleUndo}
                                 disabled={annotations.length === 0}
                                 title="Undo"
-                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
+                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-2.5 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30 sm:px-3"
                             >
                                 <RotateCcw className="h-4 w-4" />
-                                Undo
+                                <span className="hidden sm:inline">Undo</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={handleClear}
                                 disabled={annotations.length === 0}
                                 title="Clear step"
-                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
+                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-2.5 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30 sm:px-3"
                             >
                                 <Eraser className="h-4 w-4" />
-                                Clear
+                                <span className="hidden sm:inline">Clear</span>
                             </button>
                         </>
                     )}
@@ -1029,20 +1029,20 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                     <Button
                         onClick={postBeta}
                         disabled={isPosting || (!content.trim() && annotations.length === 0)}
-                        className="h-10 rounded-2xl bg-blue-600 px-3 text-xs font-bold hover:bg-blue-500"
+                        className="h-10 rounded-2xl bg-blue-600 px-2.5 text-xs font-bold hover:bg-blue-500 sm:px-3"
                     >
                         {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        Post beta
+                        <span className="hidden sm:inline">Post beta</span>
                     </Button>
 
                     <button
                         type="button"
                         onClick={onCancel}
                         title="Cancel"
-                        className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white"
+                        className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-2.5 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white sm:px-3"
                     >
                         <X className="h-4 w-4" />
-                        Cancel
+                        <span className="hidden sm:inline">Cancel</span>
                     </button>
                 </div>
             </div>
