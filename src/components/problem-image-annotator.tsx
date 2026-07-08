@@ -753,86 +753,254 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     }
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 md:p-4">
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2 text-white">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Tools</span>
-                <div className="flex items-center gap-1 rounded-full bg-black/25 p-1">
-                    {tools.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            title={option.label}
-                            onClick={() => setTool(option.value)}
+        <div className="min-h-0 flex-1 overflow-hidden p-3 md:p-4">
+            <div className="relative flex h-full min-h-[620px] overflow-hidden rounded-2xl bg-black/40">
+                <div className="flex min-h-full flex-1 items-center justify-center overflow-auto p-3">
+                    <div className="relative inline-block">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            ref={imageRef}
+                            src={editableImage}
+                            crossOrigin="anonymous"
+                            alt={name}
+                            onLoad={syncCanvasSize}
+                            onError={() => toast.error("Could not load this image for editing")}
+                            className="max-h-[72vh] max-w-full select-none object-contain"
+                            draggable={false}
+                        />
+                        <canvas
+                            ref={canvasRef}
                             className={cn(
-                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all",
-                                tool === option.value ? "bg-white text-slate-900 shadow-sm" : "text-white/70 hover:text-white"
+                                "absolute inset-0 touch-none",
+                                isPreview ? "pointer-events-none cursor-default" : tool === "pose" || tool === "text" ? "cursor-copy" : "cursor-crosshair"
                             )}
-                        >
-                            {option.icon}
-                            <span className="hidden md:inline">{option.label}</span>
-                        </button>
-                    ))}
+                            onPointerDown={handlePointerDown}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={finishDrawing}
+                            onPointerCancel={finishDrawing}
+                        />
+                        {!isPreview && tool === "pose" && !currentPose && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+                                <div className="rounded-full border border-white/15 bg-black/60 px-4 py-2 text-sm font-semibold text-white/90 shadow-lg backdrop-blur">
+                                    Tap the wall to place the climber pose.
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2 px-1 text-white select-none">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Steps</span>
-                <div className="flex flex-wrap items-center gap-1.5">
-                    {steps.map((_, index) => (
-                        <div
-                            key={index}
-                            className={cn(
-                                "flex items-center overflow-hidden rounded-full border transition-colors",
-                                activeStepIndex === index ? "border-blue-500 bg-blue-600" : "border-white/15 bg-white/5"
+                {!isPreview && (
+                    <>
+                        <div className="absolute left-3 top-16 z-20 rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur">
+                            <div className="flex flex-wrap items-center gap-1">
+                                {tools.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        title={option.label}
+                                        onClick={() => setTool(option.value)}
+                                        className={cn(
+                                            "flex h-10 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold transition-colors",
+                                            tool === option.value ? "bg-white text-slate-950" : "text-white/70 hover:bg-white/10 hover:text-white"
+                                        )}
+                                    >
+                                        {option.icon}
+                                        <span className="hidden sm:inline">{option.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="absolute left-3 top-[8.25rem] z-20 w-[min(20rem,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-white/[0.07] p-3 text-white shadow-xl backdrop-blur">
+                            <div className="mb-3 flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 className="text-sm font-bold">{tool === "pose" ? "Pose" : tool === "text" ? "Text" : "Draw"}</h3>
+                                    <p className="text-xs text-white/45">{hint}</p>
+                                </div>
+                                {tool === "pose" && (
+                                    <button
+                                        type="button"
+                                        onClick={deletePose}
+                                        disabled={!currentPose}
+                                        className="rounded-lg border border-red-400/25 px-2 py-1 text-xs font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:opacity-30"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+                            </div>
+
+                            {tool === "pose" ? (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                        {PRESET_ORDER.map((preset) => (
+                                            <button
+                                                key={preset}
+                                                type="button"
+                                                onClick={() => applyPreset(preset)}
+                                                className={cn(
+                                                    "rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors",
+                                                    posePreset === preset ? "border-sky-300 bg-sky-400 text-slate-950" : "border-white/10 bg-black/20 text-white/75 hover:bg-white/10 hover:text-white"
+                                                )}
+                                            >
+                                                {PRESETS[preset].label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={copyPreviousPose}
+                                            disabled={!previousStepHasPose}
+                                            className="rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-30"
+                                        >
+                                            Copy previous
+                                        </button>
+                                        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2.5 py-1.5 text-xs font-semibold text-white/80">
+                                            Ghost
+                                            <input
+                                                type="checkbox"
+                                                checked={showPreviousPose}
+                                                onChange={(event) => setShowPreviousPose(event.target.checked)}
+                                                disabled={!previousStepHasPose}
+                                                className="h-4 w-4 accent-sky-400"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {COLORS.map((option) => (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                onClick={() => handlePoseColorChange(option)}
+                                                className={cn("h-7 w-7 rounded-full border border-white/30 transition-transform", poseColor === option && "scale-110 ring-2 ring-white")}
+                                                style={{ backgroundColor: option }}
+                                                aria-label={`Use ${option} for pose`}
+                                            />
+                                        ))}
+                                        <input
+                                            type="range"
+                                            min="0.25"
+                                            max="0.9"
+                                            step="0.05"
+                                            value={poseOpacity}
+                                            onChange={(event) => handlePoseOpacityChange(Number(event.target.value))}
+                                            className="min-w-0 flex-1 accent-sky-400"
+                                            aria-label="Pose opacity"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        {COLORS.map((option) => (
+                                            <button
+                                                key={option}
+                                                type="button"
+                                                onClick={() => setColor(option)}
+                                                className={cn("h-7 w-7 rounded-full border border-white/30 transition-transform", color === option && "scale-110 ring-2 ring-white")}
+                                                style={{ backgroundColor: option }}
+                                                aria-label={`Use ${option}`}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {tool !== "text" ? (
+                                        <label className="flex items-center gap-3">
+                                            <span className="text-xs font-semibold text-white/55">Size</span>
+                                            <input
+                                                type="range"
+                                                min="2"
+                                                max="12"
+                                                value={strokeWidth}
+                                                onChange={(event) => setStrokeWidth(Number(event.target.value))}
+                                                className="min-w-0 flex-1 accent-white"
+                                                aria-label="Stroke width"
+                                            />
+                                        </label>
+                                    ) : (
+                                        <input
+                                            value={labelText}
+                                            onChange={(event) => setLabelText(event.target.value)}
+                                            placeholder="Short label"
+                                            maxLength={32}
+                                            className="h-10 w-full rounded-lg border border-white/15 bg-black/30 px-3 text-sm text-white placeholder:text-white/45"
+                                        />
+                                    )}
+                                </div>
                             )}
-                        >
+
+                            <div className="mt-3 border-t border-white/10 pt-3">
+                                <label className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-white/45">Step cue</label>
+                                <Textarea
+                                    value={content}
+                                    onChange={(event) => handleContentChange(event.target.value)}
+                                    placeholder="Example: RH bump, keep left hip close, flag right foot."
+                                    maxLength={500}
+                                    className="min-h-[64px] resize-none rounded-xl border-white/15 bg-white/95 text-slate-900"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="absolute left-1/2 top-3 z-20 flex max-w-[min(36rem,calc(100%-2rem))] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.07] p-1.5 text-white shadow-xl backdrop-blur [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {steps.map((_, index) => (
+                                <div
+                                    key={index}
+                                    className={cn(
+                                        "flex shrink-0 items-center overflow-hidden rounded-xl border transition-colors",
+                                        activeStepIndex === index ? "border-blue-400 bg-blue-600" : "border-white/10 bg-white/5"
+                                    )}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => switchStep(index)}
+                                        className={cn("px-2.5 py-2 text-xs font-bold transition-colors", activeStepIndex === index ? "text-white" : "text-white/70 hover:text-white")}
+                                    >
+                                        Step {index + 1}
+                                    </button>
+                                    {steps.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeStep(index)}
+                                            className="py-2 pl-0.5 pr-2 text-white/40 transition-colors hover:text-red-300"
+                                            title="Delete step"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
                             <button
                                 type="button"
-                                onClick={() => switchStep(index)}
-                                className={cn(
-                                    "px-3 py-1.5 text-xs font-bold transition-colors",
-                                    activeStepIndex === index ? "text-white" : "text-white/70 hover:text-white"
-                                )}
+                                onClick={addStep}
+                                className="shrink-0 rounded-xl border border-dashed border-white/25 px-3 py-2 text-xs font-semibold text-white/75 transition-colors hover:border-white/50 hover:text-white"
                             >
-                                Step {index + 1}
+                                + Step
                             </button>
-                            {steps.length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => removeStep(index)}
-                                    className="pr-2 pl-0.5 py-1 text-white/40 hover:text-red-300 transition-colors"
-                                    title="Delete step"
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                            )}
                         </div>
-                    ))}
+
+                    </>
+                )}
+
+                <div className="absolute left-3 top-3 z-30 flex items-center rounded-2xl border border-white/10 bg-white/[0.07] p-1 text-white shadow-xl backdrop-blur">
                     <button
                         type="button"
-                        onClick={addStep}
-                        className="rounded-full border border-dashed border-white/25 px-3 py-1.5 text-xs font-semibold text-white/70 transition-colors hover:border-white/50 hover:text-white"
+                        onClick={() => setIsPreview(false)}
+                        className={cn("rounded-xl px-3 py-2 text-xs font-semibold transition-colors", !isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
                     >
-                        + Step
+                        Edit
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsPreview(true)}
+                        className={cn("rounded-xl px-3 py-2 text-xs font-semibold transition-colors", isPreview ? "bg-white text-slate-950" : "text-white/65 hover:text-white")}
+                    >
+                        Preview
                     </button>
                 </div>
-                <div className="ml-auto flex flex-wrap items-center gap-1">
-                    <div className="flex items-center rounded-full bg-black/25 p-1">
-                        <button
-                            type="button"
-                            onClick={() => setIsPreview(false)}
-                            className={cn("rounded-full px-3 py-1.5 text-xs font-semibold transition-colors", !isPreview ? "bg-white text-slate-900" : "text-white/65 hover:text-white")}
-                        >
-                            Edit
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setIsPreview(true)}
-                            className={cn("rounded-full px-3 py-1.5 text-xs font-semibold transition-colors", isPreview ? "bg-white text-slate-900" : "text-white/65 hover:text-white")}
-                        >
-                            Preview
-                        </button>
-                    </div>
+
+                <div className="absolute right-3 top-3 z-30 flex flex-wrap items-center justify-end gap-1.5">
                     {!isPreview && (
                         <>
                             <button
@@ -840,7 +1008,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                                 onClick={handleUndo}
                                 disabled={annotations.length === 0}
                                 title="Undo"
-                                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
+                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
                             >
                                 <RotateCcw className="h-4 w-4" />
                                 Undo
@@ -850,225 +1018,33 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                                 onClick={handleClear}
                                 disabled={annotations.length === 0}
                                 title="Clear step"
-                                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
+                                className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
                             >
                                 <Eraser className="h-4 w-4" />
                                 Clear
                             </button>
                         </>
                     )}
+
+                    <Button
+                        onClick={postBeta}
+                        disabled={isPosting || (!content.trim() && annotations.length === 0)}
+                        className="h-10 rounded-2xl bg-blue-600 px-3 text-xs font-bold hover:bg-blue-500"
+                    >
+                        {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        Post beta
+                    </Button>
+
                     <button
                         type="button"
                         onClick={onCancel}
                         title="Cancel"
-                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+                        className="flex h-10 items-center gap-1.5 rounded-2xl border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white/80 shadow-xl backdrop-blur transition-colors hover:bg-white/15 hover:text-white"
                     >
                         <X className="h-4 w-4" />
                         Cancel
                     </button>
                 </div>
-            </div>
-
-            <div className={cn("grid min-h-0 flex-1 gap-3", !isPreview && "lg:grid-cols-[minmax(0,1fr)_280px]")}>
-                <div className="relative min-h-0 overflow-auto rounded-2xl bg-black/40">
-                    <div className="flex min-h-full items-center justify-center p-3">
-                        <div className="relative inline-block">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                ref={imageRef}
-                                src={editableImage}
-                                crossOrigin="anonymous"
-                                alt={name}
-                                onLoad={syncCanvasSize}
-                                onError={() => toast.error("Could not load this image for editing")}
-                                className="max-h-[58vh] max-w-full select-none object-contain"
-                                draggable={false}
-                            />
-                            <canvas
-                                ref={canvasRef}
-                                className={cn(
-                                    "absolute inset-0 touch-none",
-                                    isPreview ? "pointer-events-none cursor-default" : tool === "pose" || tool === "text" ? "cursor-copy" : "cursor-crosshair"
-                                )}
-                                onPointerDown={handlePointerDown}
-                                onPointerMove={handlePointerMove}
-                                onPointerUp={finishDrawing}
-                                onPointerCancel={finishDrawing}
-                            />
-                            {!isPreview && tool === "pose" && !currentPose && (
-                                <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
-                                    <div className="rounded-full border border-white/15 bg-black/55 px-4 py-2 text-sm font-semibold text-white/85 shadow-lg backdrop-blur">
-                                        Tap the wall to place the climber pose.
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {!isPreview && tool === "pose" && (
-                    <aside className="rounded-2xl border border-white/10 bg-white/[0.07] p-3 text-white">
-                        <div className="mb-3">
-                            <h3 className="text-sm font-bold">Pose settings</h3>
-                            <p className="text-xs text-white/45">{hint}</p>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div>
-                                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Preset</div>
-                                <div className="grid grid-cols-2 gap-1.5">
-                                    {PRESET_ORDER.map((preset) => (
-                                        <button
-                                            key={preset}
-                                            type="button"
-                                            onClick={() => applyPreset(preset)}
-                                            className={cn(
-                                                "rounded-lg border px-2.5 py-2 text-xs font-semibold transition-colors",
-                                                posePreset === preset ? "border-sky-300 bg-sky-400 text-slate-950" : "border-white/10 bg-black/20 text-white/75 hover:bg-white/10 hover:text-white"
-                                            )}
-                                        >
-                                            {PRESETS[preset].label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <button
-                                    type="button"
-                                    onClick={copyPreviousPose}
-                                    disabled={!previousStepHasPose}
-                                    className="rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-30"
-                                >
-                                    Copy previous pose
-                                </button>
-                                <label className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm font-semibold text-white/80">
-                                    Show previous pose ghost
-                                    <input
-                                        type="checkbox"
-                                        checked={showPreviousPose}
-                                        onChange={(event) => setShowPreviousPose(event.target.checked)}
-                                        disabled={!previousStepHasPose}
-                                        className="h-4 w-4 accent-sky-400"
-                                    />
-                                </label>
-                            </div>
-
-                            <div>
-                                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Pose color</div>
-                                <div className="flex items-center gap-2">
-                                    {COLORS.map((option) => (
-                                        <button
-                                            key={option}
-                                            type="button"
-                                            onClick={() => handlePoseColorChange(option)}
-                                            className={cn("h-8 w-8 rounded-full border border-white/30 transition-transform", poseColor === option && "scale-110 ring-2 ring-white")}
-                                            style={{ backgroundColor: option }}
-                                            aria-label={`Use ${option} for pose`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <label className="block">
-                                <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-white/40">Pose opacity</span>
-                                <input
-                                    type="range"
-                                    min="0.25"
-                                    max="0.9"
-                                    step="0.05"
-                                    value={poseOpacity}
-                                    onChange={(event) => handlePoseOpacityChange(Number(event.target.value))}
-                                    className="w-full accent-sky-400"
-                                />
-                            </label>
-
-                            <button
-                                type="button"
-                                onClick={deletePose}
-                                disabled={!currentPose}
-                                className="w-full rounded-lg border border-red-400/25 px-3 py-2 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:opacity-30"
-                            >
-                                Delete pose
-                            </button>
-                        </div>
-                    </aside>
-                )}
-
-                {!isPreview && tool !== "pose" && (
-                    <aside className="rounded-2xl border border-white/10 bg-white/[0.07] p-3 text-white">
-                        <div className="mb-3">
-                            <h3 className="text-sm font-bold">{tool === "text" ? "Text settings" : "Drawing settings"}</h3>
-                            <p className="text-xs text-white/45">{hint}</p>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Color</div>
-                                <div className="flex items-center gap-2">
-                                    {COLORS.map((option) => (
-                                        <button
-                                            key={option}
-                                            type="button"
-                                            onClick={() => setColor(option)}
-                                            className={cn("h-8 w-8 rounded-full border border-white/30 transition-transform", color === option && "scale-110 ring-2 ring-white")}
-                                            style={{ backgroundColor: option }}
-                                            aria-label={`Use ${option}`}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {tool !== "text" && (
-                                <label className="block">
-                                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-white/40">Brush size</span>
-                                    <input
-                                        type="range"
-                                        min="2"
-                                        max="12"
-                                        value={strokeWidth}
-                                        onChange={(event) => setStrokeWidth(Number(event.target.value))}
-                                        className="w-full accent-white"
-                                        aria-label="Stroke width"
-                                    />
-                                </label>
-                            )}
-
-                            {tool === "text" && (
-                                <label className="block">
-                                    <span className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-white/40">Label text</span>
-                                    <input
-                                        value={labelText}
-                                        onChange={(event) => setLabelText(event.target.value)}
-                                        placeholder="Short label"
-                                        maxLength={32}
-                                        className="h-10 w-full rounded-lg border border-white/15 bg-black/30 px-3 text-sm text-white placeholder:text-white/45"
-                                    />
-                                </label>
-                            )}
-                        </div>
-                    </aside>
-                )}
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                <div className="space-y-1">
-                    <label className="px-1 text-xs font-bold uppercase tracking-widest text-white/45">Step cue</label>
-                    <Textarea
-                        value={content}
-                        onChange={(event) => handleContentChange(event.target.value)}
-                        placeholder="Example: RH bump, keep left hip close, flag right foot."
-                        maxLength={500}
-                        className="min-h-[76px] resize-none rounded-2xl border-white/15 bg-white/95 text-slate-900"
-                    />
-                </div>
-                <Button
-                    onClick={postBeta}
-                    disabled={isPosting || (!content.trim() && annotations.length === 0)}
-                    className="h-full min-h-[44px] rounded-2xl bg-blue-600 font-bold hover:bg-blue-500"
-                >
-                    {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    Post beta
-                </Button>
             </div>
         </div>
     )
