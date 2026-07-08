@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { MapPin } from "lucide-react"
 import { ShareButton } from "@/components/share-button"
 
@@ -65,15 +66,19 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
         latitude: data.latitude,
         longitude: data.longitude,
         builder: data.user?.username || "Unknown",
+        builderImage: data.user?.image ?? null,
         image: data.image ?? undefined,
         description: data.description || "No description available.",
         tags: data.tags,
+        type: data.type,
         stats: {
             likes: data._count.likes,
             attempts: 0,
             completionRate: "0%"
         }
     }
+
+    const hasBuilder = problem.builder && problem.builder !== "Unknown"
 
     return (
         <div className="pb-20">
@@ -87,77 +92,86 @@ export default async function ProblemDetailPage({ params }: { params: Promise<{ 
             />
 
             <div className="max-w-4xl mx-auto px-4 py-6 md:px-8 md:py-8 space-y-6">
+                {/* Author + action bar */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <Link
+                        href={hasBuilder ? `/u/${problem.builder}` : "#"}
+                        className="group flex items-center gap-3"
+                    >
+                        {problem.builderImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                                src={problem.builderImage}
+                                alt={problem.builder}
+                                className="h-11 w-11 rounded-full object-cover ring-2 ring-slate-100"
+                            />
+                        ) : (
+                            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-950 text-sm font-bold uppercase text-white ring-2 ring-slate-100">
+                                {problem.builder.slice(0, 2)}
+                            </span>
+                        )}
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Set by</div>
+                            <div className="truncate text-sm md:text-base font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                                {problem.builder}
+                            </div>
+                        </div>
+                    </Link>
+
+                    <div className="glass-card flex items-center gap-1 rounded-full p-1.5 self-start sm:self-auto">
+                        <LikeButton
+                            problemId={id}
+                            initialHasLiked={hasLiked}
+                            initialLikesCount={problem.stats.likes}
+                            isLoggedIn={!!userId}
+                            className="rounded-full px-3 py-1.5 hover:bg-slate-100 transition-colors"
+                        />
+                        <span className="h-5 w-px bg-slate-200" />
+                        <SaveButton
+                            problemId={id}
+                            initialHasSaved={hasSaved}
+                            isLoggedIn={!!userId}
+                            className="rounded-full px-3 py-1.5 hover:bg-slate-100 transition-colors"
+                        />
+                        <span className="h-5 w-px bg-slate-200" />
+                        <ShareButton />
+                    </div>
+                </div>
+
                 {/* Main Content Split Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
-                    {/* Left Column: Actions and Description Stack */}
-                    <div className="md:col-span-2 space-y-6">
-                        {/* Actions Row */}
-                        <div className="flex items-center gap-4 min-h-[36px]">
-                            <LikeButton
-                                problemId={id}
-                                initialHasLiked={hasLiked}
-                                initialLikesCount={problem.stats.likes}
-                                isLoggedIn={!!userId}
-                                showLabel={true}
-                                className="hover:opacity-85 transition-opacity"
-                            />
-                            <SaveButton
-                                problemId={id}
-                                initialHasSaved={hasSaved}
-                                isLoggedIn={!!userId}
-                                className="hover:opacity-85 transition-opacity"
-                            />
-                            <div className="ml-auto flex items-center gap-3">
-                                <span className="text-xs md:text-sm font-semibold text-slate-500">
-                                    Set by <span className="font-bold text-slate-900">{problem.builder}</span>
-                                </span>
-                                <ShareButton />
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="space-y-2">
-                            <h3 className="text-base md:text-lg font-bold text-slate-900">Description</h3>
-                            <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                {problem.description}
-                            </p>
-                        </div>
+                    {/* Left Column: Description */}
+                    <div className="md:col-span-2 space-y-3">
+                        <h3 className="text-base md:text-lg font-bold text-slate-900">Description</h3>
+                        <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+                            {problem.description}
+                        </p>
                     </div>
 
-                    {/* Right Column: Location Gym Info */}
-                    <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <div className="flex items-center gap-2 min-h-[36px]">
-                                <MapPin className="h-4 w-4 text-blue-700 shrink-0" />
-                                <h4 className="text-sm md:text-base font-semibold text-slate-950 leading-none truncate">
-                                    {problem.gym}
-                                </h4>
-                            </div>
-                            {problem.locationAddress && (
-                                <p className="text-xs text-slate-500 pl-6">
-                                    <a
-                                        href={
-                                            problem.latitude != null && problem.longitude != null
-                                                ? `https://www.google.com/maps/search/?api=1&query=${problem.latitude},${problem.longitude}`
-                                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(problem.locationAddress)}`
-                                        }
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="hover:text-blue-700 hover:underline transition-colors"
-                                    >
-                                        {problem.locationAddress}
-                                    </a>
-                                </p>
-                            )}
-                            <div className="pt-1 pl-6">
-                                <LocationDistance
-                                    latitude={problem.latitude}
-                                    longitude={problem.longitude}
-                                    className="inline-flex items-center gap-1 rounded-full bg-blue-50/70 border border-blue-100/50 px-2.5 py-0.5 text-[10px] md:text-xs font-semibold text-blue-700"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    {/* Right Column: Location — quiet inline row, no box */}
+                    <a
+                        href={
+                            problem.latitude != null && problem.longitude != null
+                                ? `https://www.google.com/maps/search/?api=1&query=${problem.latitude},${problem.longitude}`
+                                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(problem.locationAddress || problem.gym)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block min-w-0 text-sm leading-snug text-slate-600 transition-colors md:justify-self-end md:text-right"
+                    >
+                        <span className="flex items-center gap-1.5 font-semibold text-slate-900 transition-colors group-hover:text-blue-700 md:justify-end">
+                            <MapPin className="h-4 w-4 shrink-0 text-slate-400 transition-colors group-hover:text-blue-600" />
+                            {problem.gym}
+                        </span>
+                        {problem.locationAddress && (
+                            <span className="block text-xs text-slate-500">{problem.locationAddress}</span>
+                        )}
+                        <LocationDistance
+                            latitude={problem.latitude}
+                            longitude={problem.longitude}
+                            className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-slate-400"
+                        />
+                    </a>
                 </div>
 
                 {/* Beta & Comments Section */}

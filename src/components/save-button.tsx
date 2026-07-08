@@ -71,33 +71,20 @@ export function SaveButton({
                 toggleSave()
             }}
             disabled={isPending}
-            className={cn("flex items-center gap-1.5 group transition-colors", className)}
+            aria-label={hasSaved ? "Remove from saves" : "Save"}
+            className={cn("flex items-center justify-center group/save transition-colors", className)}
         >
-            <div className={cn(
-                "p-1.5 rounded-full transition-colors",
-                hasSaved ? "bg-transparent" : "group-hover:bg-slate-100/10"
-            )}>
-                <Bookmark
-                    className={cn(
-                        "w-5 h-5 transition-all",
-                        hasSaved
-                            ? "fill-blue-500 text-blue-500 scale-110"
-                            : cn(
-                                "hover:text-blue-400 hover:fill-blue-400 scale-105",
-                                variant === "card" ? "text-white" : "text-slate-900"
-                            )
-                    )}
-                />
-            </div>
-            {/* Optional label if needed, but usually icon-only for cards or standard "Saved" text */}
-            {variant === "default" && (
-                 <span className={cn(
-                    "text-sm font-semibold transition-colors",
-                    hasSaved ? "text-blue-600" : "text-slate-900"
-                 )}>
-                    {hasSaved ? "Saved" : "Save"}
-                 </span>
-            )}
+            <Bookmark
+                className={cn(
+                    "w-5 h-5 transition-all",
+                    hasSaved
+                        ? "fill-blue-500 text-blue-500 scale-110"
+                        : cn(
+                            "group-hover/save:text-blue-400 group-hover/save:fill-blue-400 scale-105",
+                            variant === "card" ? "text-white" : "text-slate-900"
+                        )
+                )}
+            />
         </button>
     )
 }

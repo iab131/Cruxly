@@ -15,7 +15,10 @@ type FeedProblem = {
     type?: string
     image: string | null
     tags?: string[]
+    builder?: string | null
+    builderImage?: string | null
     likesCount?: number
+    commentsCount?: number
     hasLiked?: boolean
     hasSaved?: boolean
     [key: string]: unknown
@@ -115,51 +118,55 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
 
     return (
         <div className="max-w-6xl mx-auto px-4 mb-20">
-            <div className="mb-6 space-y-4">
+            {/* Sticky feed header with quick category rail — floating liquid-glass island */}
+            <div className="glass-panel sticky top-16 md:top-3 z-30 mb-6 rounded-3xl border border-white/50 px-4 pb-3 pt-3">
                 <div className="flex items-center justify-between gap-4">
-                    <h1 className="text-2xl md:text-3xl font-bold text-blue-950 tracking-tight">Discovery Feed</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-blue-950 tracking-tight">Discovery</h1>
                     <div className="flex items-center gap-2">
                         {hasActiveFilters && (
-                            <Button variant="ghost" size="sm" onClick={clearFilters} className="text-slate-500">
+                            <Button variant="ghost" size="sm" onClick={clearFilters} className="rounded-full text-slate-600 hover:bg-white/40">
                                 <X className="h-4 w-4" />
                                 Clear
                             </Button>
                         )}
                         <Button
-                            variant="outline"
+                            size="sm"
                             onClick={() => setFiltersOpen((open) => !open)}
-                            className="border-slate-200 text-slate-700 hover:text-blue-950"
+                            className={cn(
+                                "gap-2 rounded-full border backdrop-blur-md transition-all active:scale-95",
+                                filtersOpen || disciplineFilter !== "all" || locationFilter
+                                    ? "border-white/30 bg-blue-950/90 text-white shadow-md shadow-blue-950/25 hover:bg-blue-950"
+                                    : "border-white/60 bg-white/35 text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] hover:bg-white/55 hover:text-blue-950"
+                            )}
                         >
                             <SlidersHorizontal className="h-4 w-4" />
-                            Filter Problems
+                            <span className="hidden sm:inline">Filters</span>
                         </Button>
                     </div>
                 </div>
 
-                {filtersOpen && (
-                    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm space-y-4">
-                        <div className="grid gap-4 md:grid-cols-[1fr_1fr_1.2fr]">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Difficulty</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {GRADE_FILTERS.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            type="button"
-                                            onClick={() => setGradeFilter(option.value)}
-                                            className={cn(
-                                                "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-                                                gradeFilter === option.value
-                                                    ? "border-blue-950 bg-blue-950 text-white"
-                                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                                            )}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                {/* Always-visible difficulty chip rail */}
+                <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+                    {GRADE_FILTERS.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setGradeFilter(option.value)}
+                            className={cn(
+                                "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold backdrop-blur-md transition-all active:scale-95",
+                                gradeFilter === option.value
+                                    ? "border-white/30 bg-blue-950/90 text-white shadow-md shadow-blue-950/25"
+                                    : "border-white/60 bg-white/35 text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] hover:bg-white/55 hover:text-blue-950"
+                            )}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
 
+                {filtersOpen && (
+                    <div className="mt-3 rounded-2xl border border-white/50 bg-white/30 backdrop-blur-md p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6)] animate-rise-in">
+                        <div className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-slate-700">Discipline</label>
                                 <div className="flex flex-wrap gap-2">
@@ -169,10 +176,10 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                                             type="button"
                                             onClick={() => setDisciplineFilter(option.value)}
                                             className={cn(
-                                                "rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                                                "rounded-full border px-3 py-1.5 text-sm font-medium backdrop-blur-md transition-all active:scale-95",
                                                 disciplineFilter === option.value
-                                                    ? "border-blue-950 bg-blue-950 text-white"
-                                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                                                    ? "border-white/30 bg-blue-950/90 text-white shadow-md shadow-blue-950/25"
+                                                    : "border-white/60 bg-white/35 text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] hover:bg-white/55 hover:text-blue-950"
                                             )}
                                         >
                                             {option.label}
@@ -190,7 +197,7 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                                     value={locationFilter}
                                     onChange={(event) => setLocationFilter(event.target.value)}
                                     placeholder="Filter by gym..."
-                                    className="bg-white"
+                                    className="rounded-full border-white/60 bg-white/40 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6)] placeholder:text-slate-400"
                                 />
                             </div>
                         </div>
@@ -199,15 +206,20 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
-                {filteredProblems.map((prob) => (
-                    <ProblemCard
+                {filteredProblems.map((prob, index) => (
+                    <div
                         key={prob.id}
-                        {...prob}
-                        initialLikesCount={prob.likesCount}
-                        initialHasLiked={prob.hasLiked}
-                        initialHasSaved={prob.hasSaved}
-                        isLoggedIn={isLoggedIn}
-                    />
+                        className="animate-rise-in"
+                        style={{ animationDelay: `${(index % 12) * 45}ms` }}
+                    >
+                        <ProblemCard
+                            {...prob}
+                            initialLikesCount={prob.likesCount}
+                            initialHasLiked={prob.hasLiked}
+                            initialHasSaved={prob.hasSaved}
+                            isLoggedIn={isLoggedIn}
+                        />
+                    </div>
                 ))}
             </div>
 

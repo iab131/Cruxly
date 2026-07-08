@@ -14,22 +14,21 @@ interface LikeButtonProps {
     isLoggedIn: boolean
     className?: string
     variant?: "default" | "card"
-    showLabel?: boolean
 }
 
-export function LikeButton({ 
-    problemId, 
-    initialHasLiked, 
-    initialLikesCount, 
-    isLoggedIn, 
+export function LikeButton({
+    problemId,
+    initialHasLiked,
+    initialLikesCount,
+    isLoggedIn,
     className,
-    variant = "default",
-    showLabel = false
+    variant = "default"
 }: LikeButtonProps) {
     const router = useRouter()
     const [isPending] = useTransition()
     const [hasLiked, setHasLiked] = useState(initialHasLiked)
     const [likesCount, setLikesCount] = useState(initialLikesCount)
+    const [isPopping, setIsPopping] = useState(false)
 
     useEffect(() => {
         const channel = pusherClient.subscribe(`problem-${problemId}`)
@@ -58,6 +57,12 @@ export function LikeButton({
 
         setHasLiked(newHasLiked)
         setLikesCount(newLikesCount)
+
+        // Pop animation only when liking (not unliking)
+        if (newHasLiked) {
+            setIsPopping(true)
+            setTimeout(() => setIsPopping(false), 450)
+        }
 
         try {
             const res = await fetch(`/api/problems/${problemId}/like`, {
@@ -94,33 +99,34 @@ export function LikeButton({
                 toggleLike()
             }}
             disabled={isPending}
-            className={cn("flex items-center gap-1.5 group transition-colors", className)}
+            className={cn(
+                "flex items-center justify-center gap-1.5 group/like transition-colors",
+                className,
+                // Card pill sizes itself: perfect circle for a lone heart,
+                // balanced padding when a count is shown.
+                variant === "card" && (likesCount > 0 ? "px-3" : "w-9 px-0")
+            )}
         >
-            <div className={cn(
-                "p-1.5 rounded-full transition-colors",
-                hasLiked ? "bg-transparent" : "group-hover:bg-slate-100/10"
-            )}>
-                <Heart
-                    className={cn(
-                        "w-5 h-5 transition-all",
-                        hasLiked
-                            ? "fill-red-500 text-red-500 scale-110"
-                            : cn(
-                                "hover:text-red-400 hover:fill-red-400 scale-105",
-                                variant === "card" ? "text-white" : "text-slate-900"
-                            )
-                    )}
-                />
-            </div>
-            {(showLabel || likesCount > 0) && (
+            <Heart
+                className={cn(
+                    "w-5 h-5 transition-all",
+                    isPopping && "animate-like-pop",
+                    hasLiked
+                        ? "fill-red-500 text-red-500 scale-110"
+                        : cn(
+                            "group-hover/like:text-red-400 group-hover/like:fill-red-400 scale-105",
+                            variant === "card" ? "text-white" : "text-slate-900"
+                        )
+                )}
+            />
+            {likesCount > 0 && (
                 <span className={cn(
                     "text-sm font-semibold tabular-nums transition-colors",
-                    hasLiked 
-                        ? "text-red-600" 
+                    hasLiked
+                        ? "text-red-600"
                         : (variant === "card" ? "text-white" : "text-slate-900")
                 )}>
-                    {showLabel ? (hasLiked ? "Liked" : "Like") : ""}
-                    {likesCount > 0 ? (showLabel ? ` (${likesCount})` : likesCount) : ""}
+                    {likesCount}
                 </span>
             )}
         </button>

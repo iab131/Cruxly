@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface GalleryCardStackProps {
     urls: string[]
@@ -90,7 +91,7 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
                             <div
                                 key={idx}
                                 style={style}
-                                className="absolute w-full h-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-3 rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.6)] flex flex-col gap-2.5 origin-center"
+                                className="absolute w-full h-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-3 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.12)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.6)] flex flex-col gap-2.5 origin-center"
                             >
                                 <div className="relative flex-1 rounded-xl overflow-hidden bg-slate-950 border border-slate-100 dark:border-slate-800">
                                     <button
@@ -108,7 +109,7 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
                                             draggable={false}
                                         />
                                     </button>
-                                    <span className="absolute top-2 left-2 bg-slate-900/85 backdrop-blur-sm text-white px-2 py-0.5 rounded text-[10px] font-bold select-none">
+                                    <span className="glass-chip absolute top-2 left-2 text-white px-2 py-0.5 rounded-full text-[10px] font-bold select-none">
                                         Step {idx + 1} of {urls.length}
                                     </span>
                                 </div>
@@ -136,8 +137,22 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
             </div>
             
             {showNavigation && (
-                <div className="text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    Step {activeIndex + 1} of {urls.length}
+                <div className="flex items-center justify-center gap-1.5">
+                    {urls.map((_, idx) => (
+                        <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveIndex(idx)}
+                            aria-label={`Go to step ${idx + 1}`}
+                            aria-current={idx === activeIndex}
+                            className={cn(
+                                "h-1.5 rounded-full transition-all duration-300",
+                                idx === activeIndex
+                                    ? "w-5 bg-blue-700 dark:bg-blue-500"
+                                    : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
+                            )}
+                        />
+                    ))}
                 </div>
             )}
         </div>

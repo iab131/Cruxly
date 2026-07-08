@@ -142,9 +142,22 @@ export default function MePage() {
                     )}
                 </div>
                 <div className="space-y-4 flex-1">
-                    <div>
-                        <h1 className="text-3xl font-bold">{user?.username || user?.firstName || "Climber"}</h1>
-                        <p className="text-slate-500">{data?.problems?.length || 0} Problems Posted</p>
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-bold text-blue-950 tracking-tight">{user?.username || user?.firstName || "Climber"}</h1>
+
+                        {/* Stats row — social profile style */}
+                        <div className="flex items-center gap-6 md:gap-8 justify-center md:justify-start">
+                            {[
+                                { label: "Posts", value: data?.problems?.length || 0 },
+                                { label: "Likes", value: data?.problems?.reduce((sum, p) => sum + (p._count?.likes || 0), 0) || 0 },
+                                { label: "Saved", value: data?.saves?.length || 0 },
+                            ].map((stat) => (
+                                <div key={stat.label} className="text-center md:text-left">
+                                    <div className="text-xl md:text-2xl font-bold text-slate-900 tabular-nums leading-none">{stat.value}</div>
+                                    <div className="text-xs md:text-sm font-medium text-slate-500 mt-1">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="relative group">
@@ -248,20 +261,22 @@ export default function MePage() {
                                     longitude={problem.longitude}
                                     image={problem.image}
                                     builder={problem.user?.username || "Unknown"}
+                                    hideAuthor={activeTab === "problems"}
                                     tags={problem.tags}
+                                    commentsCount={problem._count?.comments}
                                     initialLikesCount={problem._count?.likes || 0}
                                     initialHasLiked={problem.hasLiked}
                                     initialHasSaved={problem.hasSaved}
                                     isLoggedIn={true}
                                 />
                                 {activeTab === "problems" && (
-                                    <button 
+                                    <button
                                         onClick={(e) => {
                                             e.preventDefault()
                                             e.stopPropagation()
                                             handleDelete(problem.id)
                                         }}
-                                        className="absolute top-4 left-4 z-30 p-2 bg-black/50 hover:bg-black/80 hover:text-red-400 text-white backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                        className="absolute bottom-4 right-4 z-30 p-2 bg-black/50 hover:bg-black/80 hover:text-red-400 text-white backdrop-blur-md ring-1 ring-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200"
                                         title="Delete Problem"
                                     >
                                         <Trash2 className="w-4 h-4" />

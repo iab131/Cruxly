@@ -1,7 +1,6 @@
 "use client"
 
 import { Share2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -22,17 +21,15 @@ export function ShareButton({ className }: ShareButtonProps) {
     }
 
     return (
-        <Button 
-            variant="outline" 
-            size="sm" 
+        <button
             onClick={handleShare}
+            aria-label="Share"
             className={cn(
-                "gap-1.5 text-slate-600 hover:text-blue-950 hover:bg-slate-50 border-slate-200 hover:border-slate-300 rounded-lg h-9 px-3 font-semibold text-sm transition-all shadow-xs",
+                "group/share flex items-center justify-center rounded-full px-3 py-1.5 hover:bg-slate-100 transition-colors",
                 className
             )}
         >
-            <Share2 className="w-4 h-4" />
-            <span>Share</span>
-        </Button>
+            <Share2 className="w-5 h-5 text-slate-900 transition-colors group-hover/share:text-blue-600 scale-105" />
+        </button>
     )
 }

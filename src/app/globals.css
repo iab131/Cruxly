@@ -144,8 +144,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
   }
 
   button:not(:disabled),
@@ -157,5 +163,115 @@
   button:disabled,
   [aria-disabled="true"] {
     cursor: not-allowed;
+  }
+
+  /* Consistent, subtle focus ring for keyboard users across the app */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* Legible text over photography (used by feed/hero image overlays) */
+  .text-shadow {
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.55), 0 1px 1px rgb(0 0 0 / 0.35);
+  }
+  .text-shadow-lg {
+    text-shadow: 0 2px 10px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.4);
+  }
+
+  /* Hide scrollbars on horizontal chip rails while keeping scroll */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Liquid glass ──────────────────────────────────────────────
+     .glass-panel : frosted surface for light-mode bars/cards
+     .glass-chip  : translucent pill for controls floating over photos
+     NOTE: write only the standard `backdrop-filter` — hand-written
+     -webkit-backdrop-filter makes Lightning CSS drop the standard property,
+     and Chrome does not implement the -webkit- alias, so nothing applies. */
+  .glass-panel {
+    background-color: color-mix(in srgb, var(--background) 35%, transparent);
+    backdrop-filter: blur(12px) saturate(185%) brightness(1.06);
+    box-shadow:
+      inset 0 1px 1px 0 rgb(255 255 255 / 0.9),
+      inset 0 -1px 1.5px 0 rgb(255 255 255 / 0.4),
+      inset 1px 0 1px -0.5px rgb(255 255 255 / 0.5),
+      inset -1px 0 1px -0.5px rgb(255 255 255 / 0.5),
+      0 12px 32px -12px rgb(15 23 42 / 0.4);
+  }
+  /* Chromium only: refract the content scrolling under the bar at its edges. */
+  @supports (backdrop-filter: url(#liquid-glass-lg)) {
+    .glass-panel {
+      backdrop-filter: url(#liquid-glass-lg) blur(4px) saturate(185%) brightness(1.06);
+    }
+  }
+  .glass-card {
+    background-color: color-mix(in srgb, var(--card) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.45);
+  }
+  /* Liquid glass: thin blur + high saturation lets the backdrop read through
+     (heavy blur is what makes glass look fake/frosted). A bright top rim and
+     inset specular highlights simulate light catching a curved glass edge. */
+  .glass-chip {
+    background-color: rgb(255 255 255 / 0.1);
+    backdrop-filter: blur(6px) saturate(180%) brightness(1.08);
+    border: 1px solid rgb(255 255 255 / 0.28);
+    box-shadow:
+      inset 0 1px 0.5px 0 rgb(255 255 255 / 0.55),
+      inset 0 -1px 1px 0 rgb(255 255 255 / 0.12),
+      0 4px 14px -4px rgb(0 0 0 / 0.45);
+  }
+  .dark .glass-chip {
+    background-color: rgb(255 255 255 / 0.07);
+    border-color: rgb(255 255 255 / 0.16);
+  }
+  /* Chromium only: bend the backdrop at the edges via the SVG displacement
+     map (#liquid-glass, mounted in AppShell) for true Apple-style refraction.
+     Other engines keep the translucent-blur fallback above. */
+  @supports (backdrop-filter: url(#liquid-glass)) {
+    .glass-chip {
+      backdrop-filter: url(#liquid-glass) blur(1px) saturate(180%) brightness(1.08);
+    }
+  }
+}
+
+/* Instagram-style "pop" when a like is registered */
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  70% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.animate-like-pop {
+  animation: like-pop 0.42s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Gentle rise-in used for feed cards and lists */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in {
+  animation: rise-in 0.5s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
