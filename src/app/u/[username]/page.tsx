@@ -74,28 +74,34 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
                     <p className="text-slate-600 mt-1">{user.bio}</p>
                 </div>
 
-                {/* Stats */}
-                <div className="flex gap-8 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                    <div>
-                        <div className="text-xl font-bold text-blue-950">{user.stats.posted}</div>
-                        <div className="text-xs text-slate-500 uppercase font-medium">Problems</div>
-                    </div>
-                    <div>
-                        <div className="text-xl font-bold text-blue-950">{user.stats.likes}</div>
-                        <div className="text-xs text-slate-500 uppercase font-medium">Likes</div>
-                    </div>
+                {/* Stats — quiet inline row, same as /me */}
+                <div className="flex items-center gap-8">
+                    {[
+                        { label: "Posts", value: user.stats.posted },
+                        { label: "Likes", value: user.stats.likes },
+                    ].map((stat) => (
+                        <div key={stat.label} className="text-center">
+                            <div className="text-xl md:text-2xl font-bold text-slate-900 tabular-nums leading-none">{stat.value}</div>
+                            <div className="text-xs md:text-sm font-medium text-slate-500 mt-1">{stat.label}</div>
+                        </div>
+                    ))}
                 </div>
             </div>
 
             <div className="space-y-4">
-                <h2 className="text-lg font-bold text-slate-900 px-1">Posted Problems</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {user.climbs.map((prob) => (
-                        <ProblemCard 
-                            key={prob.id} 
-                            {...prob} 
-                            isLoggedIn={!!currentUserId}
-                        />
+                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    Posted climbs
+                    <span className="h-px flex-1 bg-slate-200" />
+                </div>
+                <div className="columns-1 sm:columns-2 xl:columns-3 gap-6">
+                    {user.climbs.map((prob, index) => (
+                        <div
+                            key={prob.id}
+                            className="mb-6 break-inside-avoid animate-rise-in"
+                            style={{ animationDelay: `${(index % 12) * 45}ms` }}
+                        >
+                            <ProblemCard {...prob} natural isLoggedIn={!!currentUserId} />
+                        </div>
                     ))}
                 </div>
             </div>

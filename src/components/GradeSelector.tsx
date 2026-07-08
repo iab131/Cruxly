@@ -33,7 +33,7 @@ export function GradeSelector({ value, onChange }: GradeSelectorProps) {
     return (
         <div className="space-y-2">
             {/* Step 1: Buckets */}
-            <div className="grid grid-cols-4 gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-full">
                 {(Object.keys(GRADES) as Bucket[]).map((bucket) => {
                     const isSelected = selectedBucket === bucket
                     return (
@@ -42,28 +42,21 @@ export function GradeSelector({ value, onChange }: GradeSelectorProps) {
                             type="button"
                             onClick={() => {
                                 setSelectedBucket(bucket)
-                                // Optional: Clear grade when bucket changes? 
-                                // User constraints said: "Changing the bucket resets the grade"
-                                // But if we are clicking the bucket we might want to just show options.
-                                // Let's strictly follow: "Changing the bucket resets the grade" implies if I switch buckets, value is cleared until I pick a grade.
-                                // However, usually UX prefers keeping a default or asking. 
-                                // Let's clear the value if the new bucket doesn't contain the current value.
+                                // Changing to a bucket that doesn't contain the current
+                                // grade clears the selection until a new grade is picked.
                                 const currentGrades = GRADES[bucket] as readonly string[]
                                 if (!value || !currentGrades.includes(value)) {
                                     onChange("") // Clear selection
                                 }
                             }}
                             className={cn(
-                                "flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs sm:text-sm font-medium transition-all",
-                                isSelected 
-                                    ? "bg-white text-blue-950 shadow-sm ring-1 ring-black/5" 
-                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
+                                "py-2 px-1 rounded-full text-xs sm:text-sm font-medium capitalize transition-all",
+                                isSelected
+                                    ? "bg-white text-blue-950 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900"
                             )}
                         >
-                            <span className="capitalize">{bucket}</span>
-                            <span className="text-[10px] text-slate-400 font-normal mt-0.5">
-                                {GRADES[bucket][0]}-{GRADES[bucket][GRADES[bucket].length - 1]}
-                            </span>
+                            {bucket}
                         </button>
                     )
                 })}
@@ -82,10 +75,10 @@ export function GradeSelector({ value, onChange }: GradeSelectorProps) {
                                 type="button"
                                 onClick={() => onChange(grade)}
                                 className={cn(
-                                    "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all snap-center border-2",
+                                    "flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold transition-all snap-center border",
                                     value === grade
                                         ? "bg-blue-950 text-white border-blue-950 scale-110"
-                                        : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:bg-blue-50"
+                                        : "bg-white text-slate-600 border-slate-200 hover:border-blue-300"
                                 )}
                             >
                                 {grade}

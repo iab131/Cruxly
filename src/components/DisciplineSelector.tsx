@@ -48,10 +48,10 @@ export function DisciplineSelector({
         <div className="space-y-3">
             {/* Discipline Selector */}
             <div className="space-y-2">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label className="text-xs font-medium text-slate-500 leading-none">
                     Discipline
                 </label>
-                <div className="flex p-1 bg-slate-100 rounded-lg">
+                <div className="flex p-1 bg-slate-100 rounded-full">
                     {DISCIPLINES.map((option) => (
                         <button
                             key={option.value}
@@ -63,7 +63,7 @@ export function DisciplineSelector({
                                 }
                             }}
                             className={cn(
-                                "flex-1 text-sm font-medium py-2 rounded-md transition-all",
+                                "flex-1 text-sm font-medium py-2 rounded-full transition-all",
                                 discipline === option.value
                                     ? "bg-white text-blue-950 shadow-sm"
                                     : "text-slate-500 hover:text-slate-900"
@@ -80,8 +80,8 @@ export function DisciplineSelector({
                 "space-y-3 transition-all duration-300 overflow-hidden",
                 discipline === "boulder" ? "opacity-100 max-h-[400px]" : "opacity-0 max-h-0"
             )}>
-                <label className="text-sm font-medium leading-none">
-                    Style <span className="text-slate-400 font-normal ml-1">(Max 3)</span>
+                <label className="text-xs font-medium text-slate-500 leading-none">
+                    Style <span className="text-slate-400 font-normal ml-1">(max 3)</span>
                 </label>
                 
                 <div className="flex flex-wrap gap-2">

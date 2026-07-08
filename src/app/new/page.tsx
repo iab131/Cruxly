@@ -85,55 +85,48 @@ export default function CreateProblemPage() {
 
     return (
         <div className="max-w-2xl mx-auto p-4 md:p-8">
-            <h1 className="text-3xl font-bold text-blue-950 mb-2">Post a New Climb</h1>
-            <p className="text-slate-500 mb-8">Share your latest send or project with the community.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-blue-950 tracking-tight mb-8">New climb</h1>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Image Upload Zone */}
-                <div className="space-y-2">
-                    <Label className="text-base font-semibold">Photo</Label>
-                    <div className="relative group cursor-pointer">
-                        <div className={`
-                            border-2 border-dashed rounded-xl p-8 text-center transition-all
-                            ${preview ? 'border-blue-500 bg-blue-50/50' : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'}
-                         `}>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
-                                onChange={handleFileChange}
-                                required={!preview} // Only required if no preview
-                            />
+                <div className="relative group cursor-pointer">
+                    <div className={`
+                        border border-dashed rounded-3xl transition-colors
+                        ${preview ? 'border-slate-200' : 'border-slate-300 hover:border-blue-400'}
+                     `}>
+                        <Input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 opacity-0 cursor-pointer z-20 w-full h-full"
+                            onChange={handleFileChange}
+                            required={!preview} // Only required if no preview
+                        />
 
-                            {preview ? (
-                                <div className="relative h-64 w-full">
-                                    <img src={preview} alt="Preview" className="w-full h-full object-contain rounded-lg shadow-sm" />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                                        <p className="text-white font-medium flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Change Photo</p>
-                                    </div>
+                        {preview ? (
+                            <div className="relative h-72 w-full p-2">
+                                <img src={preview} alt="Preview" className="w-full h-full object-contain rounded-2xl" />
+                                <div className="absolute inset-2 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+                                    <p className="text-white font-medium flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Change photo</p>
                                 </div>
-                            ) : (
-                                <div className="flex flex-col items-center py-8">
-                                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
-                                        <UploadCloud className="w-6 h-6" />
-                                    </div>
-                                    <p className="font-medium text-slate-900">Click to upload photo</p>
-                                    <p className="text-sm text-slate-500 mt-1">SVG, PNG, JPG or GIF (max. 800x400px)</p>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center gap-2 py-16 text-slate-500 group-hover:text-blue-700 transition-colors">
+                                <UploadCloud className="w-5 h-5" />
+                                <span className="text-sm font-medium">Add a route photo</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Problem Name</Label>
-                        <Input id="name" name="name" placeholder="e.g. The Pink One" required className="bg-white" />
+                        <Label htmlFor="name" className="sr-only">Problem name</Label>
+                        <Input id="name" name="name" placeholder="Name your climb" required className="rounded-full bg-white" />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Difficulty</Label>
-                        <GradeSelector 
+                        <Label className="text-xs font-medium text-slate-500">Difficulty</Label>
+                        <GradeSelector
                             value={grade} 
                             onChange={(val) => {
                                 setGrade(val)
@@ -147,8 +140,8 @@ export default function CreateProblemPage() {
                         )}
                     </div>
                     
-                    <div className="    ">
-                        <DisciplineSelector 
+                    <div>
+                        <DisciplineSelector
                             discipline={discipline} 
                             onDisciplineChange={setDiscipline}
                             boulderStyles={boulderStyles}
@@ -159,24 +152,24 @@ export default function CreateProblemPage() {
                     <LocationPicker />
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description & Beta</Label>
+                        <Label htmlFor="description" className="sr-only">Description and beta</Label>
                         <Textarea
                             id="description"
                             name="description"
                             placeholder="Share some beta or thoughts about the climb..."
-                            className="bg-white min-h-[120px]"
+                            className="rounded-2xl bg-white min-h-[120px]"
                         />
                     </div>
                 </div>
 
-                <div className="pt-4">
-                    <Button size="lg" className="w-full bg-blue-950 hover:bg-blue-900 font-bold" disabled={uploading}>
+                <div className="pt-2">
+                    <Button size="lg" className="w-full rounded-full bg-blue-950 hover:bg-blue-900 font-bold shadow-md shadow-blue-950/25" disabled={uploading}>
                         {uploading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Publishing...
                             </>
-                        ) : "Publish Problem"}
+                        ) : "Publish"}
                     </Button>
                 </div>
             </form>

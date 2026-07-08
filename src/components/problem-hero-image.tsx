@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getGradeBadgeStyle } from "@/lib/climbing-utils"
-import { X, ZoomIn, ZoomOut, Maximize, RotateCcw, ArrowLeft } from "lucide-react"
+import { Maximize, PenLine, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProblemImageAnnotator } from "@/components/problem-image-annotator"
+import { ImageLightbox } from "@/components/image-lightbox"
 
 interface ProblemHeroImageProps {
     problemId: string
@@ -21,56 +22,17 @@ export function ProblemHeroImage({ problemId, image, name, grade, tags }: Proble
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [scale, setScale] = useState(1)
-    
-    const toggleZoom = () => {
-        if (scale > 1) {
-            setScale(1)
-        } else {
-            setScale(2.5)
-        }
-    }
 
-    // Reset zoom when closing
     const close = () => {
         setIsOpen(false)
         setIsEditing(false)
-        setScale(1)
     }
-
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = "hidden"
-            document.documentElement.style.overflow = "hidden"
-        } else {
-            document.body.style.overflow = ""
-            document.documentElement.style.overflow = ""
-        }
-        return () => {
-            document.body.style.overflow = ""
-            document.documentElement.style.overflow = ""
-        }
-    }, [isOpen])
-
-    useEffect(() => {
-        if (!isOpen) return
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                close()
-            }
-        }
-
-        window.addEventListener("keydown", handleKeyDown)
-        return () => window.removeEventListener("keydown", handleKeyDown)
-    }, [isOpen])
 
     useEffect(() => {
         function handleOpenAnnotator(event: Event) {
             const customEvent = event as CustomEvent<{ problemId: string }>
             if (customEvent.detail.problemId !== problemId || !image) return
 
-            setScale(1)
             setIsOpen(true)
             setIsEditing(true)
         }
@@ -161,96 +123,37 @@ export function ProblemHeroImage({ problemId, image, name, grade, tags }: Proble
                 </div>
             </div>
 
-            {/* Lightbox Modal */}
-            {isOpen && (
-                <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col animate-in fade-in duration-200">
-                    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4 text-center text-sm text-white/70 flex flex-col items-center">
-                        <span className="font-semibold">{name}</span>
-                        <span className="text-[10px] text-white/40 mt-0.5 uppercase tracking-wider font-semibold">
-                            Press Esc to close
-                        </span>
-                    </div>
-
-                    {isEditing ? (
-                        <ProblemImageAnnotator
-                            problemId={problemId}
-                            image={image}
-                            name={name}
-                            onCancel={() => setIsEditing(false)}
-                            onPosted={close}
-                        />
-                    ) : (
-                        <>
-                            {/* Image Area - Scrollable if zoomed */}
-                            <div 
-                                className="flex-1 overflow-auto flex items-center justify-center p-4 cursor-grab active:cursor-grabbing"
-                                onClick={toggleZoom}
-                            >
-                                 <img 
-                                    src={image} 
-                                    alt={name} 
-                                    style={{ 
-                                        transform: `scale(${scale})`,
-                                        transition: 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                                        transformOrigin: 'center center'
-                                    }}
-                                    className={cn(
-                                        "max-w-full max-h-[75vh] object-contain shadow-2xl",
-                                        scale > 1 ? "" : "w-auto h-auto"
-                                    )}
-                                    onClick={(e) => e.stopPropagation()} 
-                                 />
-                            </div>
-
-                            <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-black/55 p-1.5 text-white shadow-2xl backdrop-blur-md">
-                                <Button 
-                                    variant="ghost" 
-                                    className="rounded-full text-white hover:bg-white/10" 
-                                    onClick={(e) => { e.stopPropagation(); setIsEditing(true); setScale(1); }}
-                                >
-                                    Annotate route
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="rounded-full text-white hover:bg-white/10" 
-                                    onClick={(e) => { e.stopPropagation(); setScale(Math.max(0.5, scale - 0.5)); }}
-                                    aria-label="Zoom out"
-                                >
-                                    <ZoomOut className="w-5 h-5" />
-                                </Button>
-                                 <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="rounded-full text-white hover:bg-white/10" 
-                                    onClick={(e) => { e.stopPropagation(); setScale(1); }}
-                                    title="Reset Zoom"
-                                >
-                                    <RotateCcw className="w-5 h-5" />
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="rounded-full text-white hover:bg-white/10" 
-                                    onClick={(e) => { e.stopPropagation(); setScale(scale + 0.5); }}
-                                    aria-label="Zoom in"
-                                >
-                                    <ZoomIn className="w-5 h-5" />
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="rounded-full text-white hover:bg-white/10" 
-                                    onClick={(e) => { e.stopPropagation(); close(); }}
-                                    aria-label="Close"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
+            <ImageLightbox
+                isOpen={isOpen}
+                image={image}
+                alt={name}
+                title={isEditing ? `Beta guide - ${name}` : name}
+                badge={
+                    <Badge className={cn("shrink-0 text-white font-extrabold px-2.5 py-0.5 shadow-lg", getGradeBadgeStyle(grade))}>
+                        {grade}
+                    </Badge>
+                }
+                primaryAction={
+                    <button
+                        className="flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold transition-colors hover:bg-blue-500 active:scale-95"
+                        onClick={() => setIsEditing(true)}
+                    >
+                        <PenLine className="w-4 h-4" />
+                        Annotate route
+                    </button>
+                }
+                onClose={close}
+            >
+                {isEditing ? (
+                    <ProblemImageAnnotator
+                        problemId={problemId}
+                        image={image}
+                        name={name}
+                        onCancel={() => setIsEditing(false)}
+                        onPosted={close}
+                    />
+                ) : undefined}
+            </ImageLightbox>
         </>
     )
 }

@@ -10,6 +10,34 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
+const accountAppearance = {
+    variables: {
+        colorPrimary: "#171717",
+        colorText: "#171717",
+        colorTextSecondary: "#525252",
+        colorBackground: "#ffffff",
+        colorInputBackground: "#ffffff",
+        colorInputText: "#171717",
+        borderRadius: "0.75rem",
+    },
+    elements: {
+        modalBackdrop: "bg-neutral-950/45 backdrop-blur-[2px]",
+        modalContent: "shadow-xl shadow-neutral-950/10",
+        card: "rounded-xl border border-neutral-200 bg-white p-6 shadow-none",
+        cardBox: "rounded-xl shadow-none",
+        navbar: "border-r border-neutral-200 bg-neutral-50",
+        navbarButton: "rounded-lg text-neutral-600 hover:bg-white hover:text-neutral-950 data-[active=true]:bg-white data-[active=true]:text-neutral-950 data-[active=true]:shadow-sm",
+        headerTitle: "text-xl font-semibold tracking-tight text-neutral-950",
+        headerSubtitle: "text-sm text-neutral-500",
+        profileSection: "border-neutral-200",
+        profileSectionTitleText: "text-sm font-semibold text-neutral-950",
+        profileSectionSubtitleText: "text-sm text-neutral-500",
+        formFieldLabel: "text-sm font-medium text-neutral-700",
+        formFieldInput: "h-11 rounded-lg border-neutral-200 bg-white text-neutral-950 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950/10",
+        formButtonPrimary: "h-11 rounded-lg bg-neutral-950 text-sm font-medium text-white shadow-none hover:bg-neutral-800",
+    },
+}
+
 interface Problem {
     id: string
     name: string
@@ -200,7 +228,7 @@ export default function MePage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                         <Button onClick={() => openUserProfile()} variant="outline" size="sm" className="border-slate-200">
+                         <Button onClick={() => openUserProfile({ appearance: accountAppearance })} variant="outline" size="sm" className="border-slate-200">
                              <Settings className="w-4 h-4 mr-2" />
                              Manage Account
                          </Button>
@@ -215,16 +243,16 @@ export default function MePage() {
 
             <div>
                 <div className="flex items-center justify-between mb-6">
-                    <div className="flex p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl">
+                    <div className="flex gap-2">
                         {(["problems", "likes", "saves"] as const).map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={cn(
-                                    "px-4 py-2 rounded-lg text-sm font-semibold capitalize transition-all",
-                                    activeTab === tab 
-                                        ? "bg-white text-slate-900 shadow-sm" 
-                                        : "text-slate-500 hover:text-slate-900"
+                                    "rounded-full border px-4 py-1.5 text-sm font-semibold capitalize backdrop-blur-md transition-all active:scale-95",
+                                    activeTab === tab
+                                        ? "border-white/30 bg-blue-950/90 text-white shadow-md shadow-blue-950/25"
+                                        : "border-slate-200 bg-white/60 text-slate-600 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] hover:bg-white hover:text-blue-950"
                                 )}
                             >
                                 {tab === "problems" ? "Posted" : tab}
@@ -243,14 +271,14 @@ export default function MePage() {
                         )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {(activeTab === "problems" 
-                            ? data?.problems 
-                            : activeTab === "likes" 
-                                ? data?.likes?.map(l => l.problem) 
+                    <div className="columns-1 sm:columns-2 xl:columns-3 gap-6">
+                        {(activeTab === "problems"
+                            ? data?.problems
+                            : activeTab === "likes"
+                                ? data?.likes?.map(l => l.problem)
                                 : data?.saves?.map(s => s.problem)
                         )?.map(problem => (
-                            <div key={problem.id} className="relative group">
+                            <div key={problem.id} className="relative group mb-6 break-inside-avoid">
                                 <ProblemCard
                                     id={problem.id}
                                     name={problem.name}
@@ -269,6 +297,7 @@ export default function MePage() {
                                     initialHasLiked={problem.hasLiked}
                                     initialHasSaved={problem.hasSaved}
                                     isLoggedIn={true}
+                                    natural
                                 />
                                 {activeTab === "problems" && (
                                     <button

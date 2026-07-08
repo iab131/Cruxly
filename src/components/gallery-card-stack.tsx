@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Route } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ImageLightbox } from "@/components/image-lightbox"
 
 interface GalleryCardStackProps {
     urls: string[]
@@ -11,8 +12,19 @@ interface GalleryCardStackProps {
     onImageClick: (idx: number) => void
 }
 
-export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardStackProps) {
+export function GalleryCardStack({ urls, contents }: GalleryCardStackProps) {
     const [activeIndex, setActiveIndex] = useState(0)
+    const [lightboxIndex, setLightboxIndex] = useState(0)
+    const [isOpen, setIsOpen] = useState(false)
+
+    const open = (idx: number) => {
+        setLightboxIndex(idx)
+        setIsOpen(true)
+    }
+
+    const close = () => {
+        setIsOpen(false)
+    }
 
     const handlePrev = () => {
         setActiveIndex((prev) => Math.max(0, prev - 1))
@@ -82,7 +94,7 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
                                     <button
                                         type="button"
                                         className="w-full h-full text-left cursor-pointer"
-                                        onClick={() => onImageClick(idx)}
+                                        onClick={() => open(idx)}
                                         title="View full image"
                                         disabled={idx !== activeIndex}
                                     >
@@ -151,6 +163,24 @@ export function GalleryCardStack({ urls, contents, onImageClick }: GalleryCardSt
                     </div>
                 )}
             </div>
+
+            <ImageLightbox
+                isOpen={isOpen}
+                image={urls[lightboxIndex]}
+                alt={`Step ${lightboxIndex + 1}`}
+                title="Beta guide"
+                badge={
+                    <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-extrabold text-white shadow-lg">
+                        Step {lightboxIndex + 1} of {urls.length}
+                    </span>
+                }
+                note={contents[lightboxIndex] || <span className="text-white/50 italic">No annotation note for this step.</span>}
+                activeIndex={lightboxIndex}
+                total={urls.length}
+                onPrev={() => setLightboxIndex((idx) => Math.max(0, idx - 1))}
+                onNext={() => setLightboxIndex((idx) => Math.min(urls.length - 1, idx + 1))}
+                onClose={close}
+            />
         </div>
     )
 }

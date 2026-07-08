@@ -52,14 +52,15 @@ export default function SearchPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
-            <div className="space-y-4">
-                <h1 className="text-3xl font-bold">Explore</h1>
+        <div className="max-w-6xl mx-auto px-4 pt-4 md:pt-6 pb-20">
+            {/* Sticky liquid-glass island, same language as the feed's Discovery bar */}
+            <div className="glass-panel sticky top-3 z-30 mb-8 rounded-3xl border border-white/50 px-4 py-3 md:px-5">
+                <h1 className="mb-3 text-2xl md:text-3xl font-bold text-blue-950 tracking-tight">Explore</h1>
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                    <Input 
-                        placeholder="Search climbs by name, gym, or setter..." 
-                        className="pl-10 h-12 text-lg bg-white shadow-sm rounded-full"
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                    <Input
+                        placeholder="Search climbs by name, gym, or setter..."
+                        className="h-12 rounded-full border-white/60 bg-white/45 pl-11 text-base backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6)] placeholder:text-slate-400"
                         value={query}
                         onChange={handleInput}
                         autoFocus
@@ -67,37 +68,31 @@ export default function SearchPage() {
                 </div>
             </div>
 
-            <div className="space-y-4">
-                {loading ? (
-                     <div className="text-center py-12 text-slate-400">
-                         Searching...
-                     </div>
-                ) : hasSearched ? (
-                    results.length > 0 ? (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {results.map(prob => (
-                                <ProblemCard 
-                                    key={prob.id} 
-                                    {...prob} 
-                                    // For search results, we might not have 'hasLiked' perfectly synced unless we do a complex query, 
-                                    // simpler to default false or fetch. Assuming API returns basic data.
-                                    // If we need auth state here, we'll need useUser().
-                                    isLoggedIn={true} 
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 text-slate-400">
-                            No climbs found matching &quot;{query}&quot;
-                        </div>
-                    )
-                ) : (
-                    // Empty State / Suggestions
-                    <div className="text-center py-20 text-slate-400">
-                        <p>Type to find specific climbs or gyms.</p>
+            {loading ? (
+                <div className="py-16 text-center text-slate-400">Searching...</div>
+            ) : hasSearched ? (
+                results.length > 0 ? (
+                    <div className="columns-1 sm:columns-2 xl:columns-3 gap-6">
+                        {results.map((prob, index) => (
+                            <div
+                                key={prob.id}
+                                className="mb-6 break-inside-avoid animate-rise-in"
+                                style={{ animationDelay: `${(index % 12) * 45}ms` }}
+                            >
+                                <ProblemCard {...prob} natural isLoggedIn={true} />
+                            </div>
+                        ))}
                     </div>
-                )}
-            </div>
+                ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center text-slate-500">
+                        No climbs found matching &quot;{query}&quot;
+                    </div>
+                )
+            ) : (
+                <div className="py-20 text-center text-slate-400">
+                    <p>Type to find specific climbs or gyms.</p>
+                </div>
+            )}
         </div>
     )
 }

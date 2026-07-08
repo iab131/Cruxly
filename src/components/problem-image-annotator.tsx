@@ -7,18 +7,22 @@ import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
-type Tool = "pen" | "arrow" | "circle" | "text"
+type Tool = "pen" | "arrow" | "circle" | "text" | "stamp"
 
 type Point = {
     x: number
     y: number
 }
 
+/** Preset hold markers — the standard beta-guide vocabulary. */
+type StampKind = "lh" | "rh" | "lf" | "rf" | "match" | "start" | "top"
+
 type Annotation =
     | { type: "pen"; points: Point[]; color: string; width: number }
     | { type: "arrow"; start: Point; end: Point; color: string; width: number }
     | { type: "circle"; start: Point; end: Point; color: string; width: number }
     | { type: "text"; point: Point; text: string; color: string }
+    | { type: "stamp"; point: Point; kind: StampKind }
 
 type BetaStep = {
     annotations: Annotation[]
@@ -34,6 +38,20 @@ interface ProblemImageAnnotatorProps {
 }
 
 const COLORS = ["#ef4444", "#f97316", "#22c55e", "#3b82f6", "#f8fafc"]
+
+// Fixed semantic colours/shapes so every beta guide reads the same way:
+// hands are circles, feet are squares, route markers are pills.
+const STAMPS: Record<StampKind, { label: string; color: string; shape: "circle" | "square" | "pill"; title: string }> = {
+    lh: { label: "LH", color: "#3b82f6", shape: "circle", title: "Left hand" },
+    rh: { label: "RH", color: "#ef4444", shape: "circle", title: "Right hand" },
+    lf: { label: "LF", color: "#06b6d4", shape: "square", title: "Left foot" },
+    rf: { label: "RF", color: "#f97316", shape: "square", title: "Right foot" },
+    match: { label: "M", color: "#eab308", shape: "circle", title: "Match hands" },
+    start: { label: "START", color: "#22c55e", shape: "pill", title: "Start hold" },
+    top: { label: "TOP", color: "#a855f7", shape: "pill", title: "Finish hold" },
+}
+
+const STAMP_ORDER: StampKind[] = ["lh", "rh", "lf", "rf", "match", "start", "top"]
 
 function getEditableImageSrc(image: string) {
     if (!/^https?:\/\//i.test(image)) return image
@@ -59,6 +77,47 @@ function drawArrow(ctx: CanvasRenderingContext2D, start: Point, end: Point, colo
     ctx.lineTo(end.x - headLength * Math.cos(angle + Math.PI / 6), end.y - headLength * Math.sin(angle + Math.PI / 6))
     ctx.closePath()
     ctx.fill()
+}
+
+function drawStamp(ctx: CanvasRenderingContext2D, point: Point, kind: StampKind) {
+    const spec = STAMPS[kind]
+    const { x, y } = point
+
+    ctx.save()
+    ctx.shadowColor = "rgba(0,0,0,0.45)"
+    ctx.shadowBlur = 6
+    ctx.shadowOffsetY = 1
+    ctx.fillStyle = spec.color
+    ctx.strokeStyle = "rgba(255,255,255,0.95)"
+    ctx.lineWidth = 2.5
+
+    if (spec.shape === "circle") {
+        ctx.beginPath()
+        ctx.arc(x, y, 16, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.stroke()
+    } else if (spec.shape === "square") {
+        ctx.beginPath()
+        ctx.roundRect(x - 15, y - 15, 30, 30, 8)
+        ctx.fill()
+        ctx.stroke()
+    } else {
+        ctx.font = "800 12px system-ui, sans-serif"
+        const width = ctx.measureText(spec.label).width + 20
+        ctx.beginPath()
+        ctx.roundRect(x - width / 2, y - 13, width, 26, 13)
+        ctx.fill()
+        ctx.stroke()
+    }
+
+    ctx.shadowBlur = 0
+    ctx.shadowOffsetY = 0
+    ctx.fillStyle = "#fff"
+    ctx.font = spec.shape === "pill" ? "800 12px system-ui, sans-serif" : "800 11px system-ui, sans-serif"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText(spec.label, x, y + 0.5)
+    ctx.restore()
 }
 
 function drawAnnotation(ctx: CanvasRenderingContext2D, annotation: Annotation) {
@@ -102,6 +161,10 @@ function drawAnnotation(ctx: CanvasRenderingContext2D, annotation: Annotation) {
         ctx.fillText(annotation.text, annotation.point.x, annotation.point.y)
     }
 
+    if (annotation.type === "stamp") {
+        drawStamp(ctx, annotation.point, annotation.kind)
+    }
+
     ctx.restore()
 }
 
@@ -109,11 +172,12 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     const imageRef = useRef<HTMLImageElement | null>(null)
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const containerRef = useRef<HTMLDivElement | null>(null)
-    const [tool, setTool] = useState<Tool>("pen")
+    const [tool, setTool] = useState<Tool>("stamp")
+    const [stampKind, setStampKind] = useState<StampKind>("lh")
     const [color, setColor] = useState(COLORS[0])
     const [strokeWidth, setStrokeWidth] = useState(5)
     const [labelText, setLabelText] = useState("")
-    
+
     // Step state configuration
     const [steps, setSteps] = useState<BetaStep[]>([{ annotations: [], content: "" }])
     const [activeStepIndex, setActiveStepIndex] = useState(0)
@@ -179,7 +243,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     const addStep = () => {
         const updated = [...steps]
         updated[activeStepIndex] = { annotations, content }
-        
+
         updated.push({ annotations: [], content: "" })
         setSteps(updated)
 
@@ -234,10 +298,25 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
         })
     }
 
+    function commitAnnotation(annotation: Annotation) {
+        const updated = [...annotations, annotation]
+        setAnnotations(updated)
+        setSteps(prev => {
+            const next = [...prev]
+            next[activeStepIndex] = { annotations: updated, content }
+            return next
+        })
+    }
+
     function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
         event.preventDefault()
         event.currentTarget.setPointerCapture(event.pointerId)
         const point = getPoint(event)
+
+        if (tool === "stamp") {
+            commitAnnotation({ type: "stamp", point, kind: stampKind })
+            return
+        }
 
         if (tool === "text") {
             const text = labelText.trim()
@@ -245,13 +324,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                 toast.error("Add label text first")
                 return
             }
-            const updated = [...annotations, { type: "text", point, text, color } as Annotation]
-            setAnnotations(updated)
-            setSteps(prev => {
-                const next = [...prev]
-                next[activeStepIndex] = { annotations: updated, content }
-                return next
-            })
+            commitAnnotation({ type: "text", point, text, color })
             return
         }
 
@@ -276,15 +349,9 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
     function finishDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
         if (!isDrawing || !draftAnnotation) return
         event.preventDefault()
-        const updated = [...annotations, draftAnnotation]
-        setAnnotations(updated)
+        commitAnnotation(draftAnnotation)
         setDraftAnnotation(null)
         setIsDrawing(false)
-        setSteps(prev => {
-            const next = [...prev]
-            next[activeStepIndex] = { annotations: updated, content }
-            return next
-        })
     }
 
     async function exportAnnotatedImage(stepAnnotations: Annotation[]) {
@@ -328,7 +395,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
             for (let i = 0; i < finalSteps.length; i++) {
                 const step = finalSteps[i]
                 const stepNum = i + 1
-                
+
                 // Append text description for this step
                 formData.append("contents", step.content.trim())
 
@@ -368,35 +435,77 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
         { value: "text", label: "Text", icon: <Type className="h-4 w-4" /> },
     ]
 
+    const hint =
+        tool === "stamp"
+            ? `Tap the photo to place a ${STAMPS[stampKind].title.toLowerCase()} marker`
+            : tool === "text"
+                ? "Type a label, then tap the photo to place it"
+                : "Drag on the photo to draw"
+
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 md:p-4">
-            <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white/10 p-2 text-white">
-                {tools.map((option) => (
-                    <Button
-                        key={option.value}
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setTool(option.value)}
-                        className={cn(
-                            "text-white hover:bg-white/15",
-                            tool === option.value && "bg-white/20"
-                        )}
-                    >
-                        {option.icon}
-                        {option.label}
-                    </Button>
-                ))}
+            {/* Row 1 — hold markers: the primary beta-guide tools */}
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2 text-white">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Holds</span>
+                {STAMP_ORDER.map((kind) => {
+                    const spec = STAMPS[kind]
+                    const isActive = tool === "stamp" && stampKind === kind
+                    return (
+                        <button
+                            key={kind}
+                            type="button"
+                            title={spec.title}
+                            onClick={() => { setTool("stamp"); setStampKind(kind) }}
+                            className={cn(
+                                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-all active:scale-95",
+                                isActive
+                                    ? "border-white bg-white text-slate-900 shadow-sm"
+                                    : "border-white/15 bg-white/5 text-white/80 hover:bg-white/15 hover:text-white"
+                            )}
+                        >
+                            <span
+                                className={cn("h-3 w-3 shrink-0", spec.shape === "square" ? "rounded-[3px]" : "rounded-full")}
+                                style={{ backgroundColor: spec.color }}
+                            />
+                            {spec.label}
+                        </button>
+                    )
+                })}
+                <span className="ml-auto hidden text-xs text-white/40 sm:block">{hint}</span>
+            </div>
 
-                <div className="flex items-center gap-1 px-1">
+            {/* Row 2 — freehand tools, colour, width, actions */}
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2 text-white">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Draw</span>
+                <div className="flex items-center gap-1 rounded-full bg-black/25 p-1">
+                    {tools.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            title={option.label}
+                            onClick={() => setTool(option.value)}
+                            className={cn(
+                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all",
+                                tool === option.value
+                                    ? "bg-white text-slate-900 shadow-sm"
+                                    : "text-white/70 hover:text-white"
+                            )}
+                        >
+                            {option.icon}
+                            <span className="hidden md:inline">{option.label}</span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 px-1">
                     {COLORS.map((option) => (
                         <button
                             key={option}
                             type="button"
                             onClick={() => setColor(option)}
                             className={cn(
-                                "h-7 w-7 rounded-full border-2 border-white/40",
-                                color === option && "ring-2 ring-white"
+                                "h-6 w-6 rounded-full border border-white/30 transition-transform",
+                                color === option && "scale-110 ring-2 ring-white ring-offset-1 ring-offset-transparent"
                             )}
                             style={{ backgroundColor: option }}
                             aria-label={`Use ${option}`}
@@ -410,7 +519,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                     max="12"
                     value={strokeWidth}
                     onChange={(event) => setStrokeWidth(Number(event.target.value))}
-                    className="w-24"
+                    className="w-20 accent-white"
                     aria-label="Stroke width"
                 />
 
@@ -420,63 +529,70 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                         onChange={(event) => setLabelText(event.target.value)}
                         placeholder="Label"
                         maxLength={32}
-                        className="h-9 min-w-0 rounded-md border border-white/20 bg-black/30 px-3 text-sm text-white placeholder:text-white/50"
+                        className="h-8 min-w-0 rounded-full border border-white/20 bg-black/30 px-3 text-sm text-white placeholder:text-white/50"
                     />
                 )}
 
-                <div className="ml-auto flex items-center gap-2">
-                    <Button
+                <div className="ml-auto flex items-center gap-1">
+                    <button
                         type="button"
-                        size="sm"
-                        variant="ghost"
                         onClick={handleUndo}
                         disabled={annotations.length === 0}
-                        className="text-white hover:bg-white/15"
+                        title="Undo"
+                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
                     >
                         <RotateCcw className="h-4 w-4" />
-                        Undo
-                    </Button>
-                    <Button
+                        <span className="hidden md:inline">Undo</span>
+                    </button>
+                    <button
                         type="button"
-                        size="sm"
-                        variant="ghost"
                         onClick={handleClear}
                         disabled={annotations.length === 0}
-                        className="text-white hover:bg-white/15"
+                        title="Clear step"
+                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-30"
                     >
                         <Eraser className="h-4 w-4" />
-                        Clear
-                    </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={onCancel} className="text-white hover:bg-white/15">
+                        <span className="hidden md:inline">Clear</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        title="Cancel"
+                        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+                    >
                         <X className="h-4 w-4" />
-                        Cancel
-                    </Button>
+                        <span className="hidden md:inline">Cancel</span>
+                    </button>
                 </div>
             </div>
 
             {/* Step Navigation Bar */}
-            <div className="flex flex-wrap items-center gap-2 px-1 py-1 text-white border-b border-white/5 select-none">
-                <span className="text-xs font-semibold text-white/50 mr-1">Beta Guide Steps:</span>
+            <div className="flex flex-wrap items-center gap-2 px-1 text-white select-none">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">Steps</span>
                 <div className="flex flex-wrap items-center gap-1.5">
-                    {steps.map((s, index) => (
-                        <div key={index} className="flex items-center bg-white/5 rounded-md border border-white/10 overflow-hidden">
+                    {steps.map((_, index) => (
+                        <div
+                            key={index}
+                            className={cn(
+                                "flex items-center overflow-hidden rounded-full border transition-colors",
+                                activeStepIndex === index ? "border-blue-500 bg-blue-600" : "border-white/15 bg-white/5"
+                            )}
+                        >
                             <button
                                 type="button"
                                 onClick={() => switchStep(index)}
                                 className={cn(
-                                    "px-2.5 py-1 text-xs font-bold transition-colors",
-                                    activeStepIndex === index 
-                                        ? "bg-blue-600 text-white" 
-                                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                                    "px-3 py-1 text-xs font-bold transition-colors",
+                                    activeStepIndex === index ? "text-white" : "text-white/70 hover:text-white"
                                 )}
                             >
-                                Step {index + 1}
+                                {index + 1}
                             </button>
                             {steps.length > 1 && (
                                 <button
                                     type="button"
                                     onClick={() => removeStep(index)}
-                                    className="px-1.5 py-1 text-white/40 hover:text-red-400 hover:bg-red-500/10 border-l border-white/10 transition-colors"
+                                    className="pr-2 pl-0.5 py-1 text-white/40 hover:text-red-300 transition-colors"
                                     title="Delete step"
                                 >
                                     <X className="h-3 w-3" />
@@ -484,19 +600,18 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                             )}
                         </div>
                     ))}
-                    <Button
+                    <button
                         type="button"
-                        size="sm"
-                        variant="ghost"
                         onClick={addStep}
-                        className="h-7 text-xs text-blue-400 hover:text-blue-300 hover:bg-white/5 border border-dashed border-blue-500/30 rounded-md gap-1"
+                        className="rounded-full border border-dashed border-white/25 px-3 py-1 text-xs font-semibold text-white/70 transition-colors hover:border-white/50 hover:text-white"
                     >
-                        + Add Step
-                    </Button>
+                        + Step
+                    </button>
                 </div>
+                <span className="ml-auto text-xs text-white/40 sm:hidden">{hint}</span>
             </div>
 
-            <div ref={containerRef} className="relative min-h-0 flex-1 overflow-auto rounded-lg bg-black/40">
+            <div ref={containerRef} className="relative min-h-0 flex-1 overflow-auto rounded-2xl bg-black/40">
                 <div className="flex min-h-full items-center justify-center p-3">
                     <div className="relative inline-block">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -512,7 +627,7 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                         />
                         <canvas
                             ref={canvasRef}
-                            className="absolute inset-0 touch-none"
+                            className={cn("absolute inset-0 touch-none", tool === "stamp" || tool === "text" ? "cursor-copy" : "cursor-crosshair")}
                             onPointerDown={handlePointerDown}
                             onPointerMove={handlePointerMove}
                             onPointerUp={finishDrawing}
@@ -526,11 +641,15 @@ export function ProblemImageAnnotator({ problemId, image, name, onCancel, onPost
                 <Textarea
                     value={content}
                     onChange={(event) => handleContentChange(event.target.value)}
-                    placeholder="Explain your beta, sequence, or advice for this step..."
+                    placeholder={`Explain step ${activeStepIndex + 1} — sequence, body position, advice...`}
                     maxLength={500}
-                    className="min-h-[76px] resize-none border-white/15 bg-white/95 text-slate-900"
+                    className="min-h-[76px] resize-none rounded-2xl border-white/15 bg-white/95 text-slate-900"
                 />
-                <Button onClick={postBeta} disabled={isPosting || (!content.trim() && annotations.length === 0)} className="h-full min-h-[44px]">
+                <Button
+                    onClick={postBeta}
+                    disabled={isPosting || (!content.trim() && annotations.length === 0)}
+                    className="h-full min-h-[44px] rounded-2xl bg-blue-600 font-bold hover:bg-blue-500"
+                >
                     {isPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     Post beta
                 </Button>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Crosshair, Loader2, MapPin, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,6 +84,9 @@ export function LocationPicker() {
   const [isLocating, setIsLocating] = useState(false)
   const [isSuggestionOpen, setIsSuggestionOpen] = useState(false)
   const [searchBias, setSearchBias] = useState<SearchBias>(DEFAULT_SEARCH_BIAS)
+  // Set when the input text comes from picking a suggestion, so the
+  // autocomplete effect doesn't immediately re-search and reopen the dropdown.
+  const justSelectedRef = useRef(false)
 
   const canAutocomplete = Boolean(geoapifyApiKey)
   const searchText = location.gym.trim()
@@ -104,6 +107,12 @@ export function LocationPicker() {
   }, [canAutocomplete])
 
   useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false
+      setSuggestions([])
+      setIsSearching(false)
+      return
+    }
     if (!canAutocomplete || searchText.length < 3) {
       setSuggestions([])
       setIsSearching(false)
@@ -157,7 +166,7 @@ export function LocationPicker() {
   }, [canAutocomplete, geoapifyApiKey, searchBias.latitude, searchBias.longitude, searchText])
 
   const helperText = useMemo(() => {
-    if (canAutocomplete) return "Showing likely climbing, bouldering, sports, fitness, or gym results near you."
+    if (canAutocomplete) return null
     return "No Geoapify key found. Enter the gym manually and add coordinates to show map pins and distance."
   }, [canAutocomplete])
 
@@ -173,6 +182,7 @@ export function LocationPicker() {
     const properties = feature.properties
     const formatted = properties.formatted || ""
 
+    justSelectedRef.current = true
     setLocation({
       gym: properties.name || properties.address_line1 || formatted,
       locationAddress: formatted,
@@ -204,16 +214,16 @@ export function LocationPicker() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="gym">Search climbing gym or bouldering gym</Label>
+        <Label htmlFor="gym" className="text-xs font-medium text-slate-500">Location</Label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <MapPin className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             id="gym"
             name="gym"
-            placeholder={canAutocomplete ? "e.g. Hub Climbing, Boulder Parc, Joe Rockhead's" : "Gym name"}
-            className="bg-white pl-10 pr-10"
+            placeholder={canAutocomplete ? "Search for your gym" : "Gym name"}
+            className="rounded-full bg-white pl-10 pr-10"
             value={location.gym}
             autoComplete="off"
             onFocus={() => setIsSuggestionOpen(true)}
@@ -232,7 +242,7 @@ export function LocationPicker() {
           )}
 
           {canAutocomplete && isSuggestionOpen && suggestions.length > 0 && (
-            <div className="absolute z-30 mt-2 max-h-72 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+            <div className="absolute z-30 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white py-1 shadow-xl">
               {suggestions.map((feature) => {
                 const properties = feature.properties
                 const label = properties.name || properties.address_line1 || properties.formatted || "Unnamed location"
@@ -255,65 +265,67 @@ export function LocationPicker() {
             </div>
           )}
         </div>
-        <p className="text-xs text-slate-500">{helperText}</p>
+        {helperText && <p className="text-xs text-slate-500">{helperText}</p>}
       </div>
 
-      <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Can&apos;t find your gym? Enter it manually.</h3>
-        </div>
+      {/* Manual entry tucked behind a quiet disclosure */}
+      <details className="group">
+        <summary className="cursor-pointer list-none text-xs font-medium text-slate-500 hover:text-blue-700 transition-colors">
+          Can&apos;t find your gym? Enter it manually
+        </summary>
+        <div className="mt-3 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <Input
+              name="locationAddress"
+              placeholder="Address"
+              className="rounded-full bg-white"
+              value={location.locationAddress}
+              onChange={(event) =>
+                setLocation((current) => ({
+                  ...current,
+                  locationAddress: event.target.value,
+                  placeId: "",
+                }))
+              }
+            />
+            <Button type="button" variant="outline" onClick={useCurrentLocation} disabled={isLocating} className="shrink-0 rounded-full">
+              <Crosshair className="h-4 w-4" />
+              {isLocating ? "Locating..." : "Use my pin"}
+            </Button>
+          </div>
 
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-          <Input
-            name="locationAddress"
-            placeholder="Address"
-            className="bg-white"
-            value={location.locationAddress}
-            onChange={(event) =>
-              setLocation((current) => ({
-                ...current,
-                locationAddress: event.target.value,
-                placeId: "",
-              }))
-            }
-          />
-          <Button type="button" variant="outline" onClick={useCurrentLocation} disabled={isLocating} className="shrink-0">
-            <Crosshair className="h-4 w-4" />
-            {isLocating ? "Locating..." : "Use my pin"}
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              name="latitude"
+              inputMode="decimal"
+              placeholder="Latitude"
+              className="rounded-full bg-white"
+              value={location.latitude}
+              onChange={(event) =>
+                setLocation((current) => ({
+                  ...current,
+                  latitude: event.target.value,
+                  placeId: "",
+                }))
+              }
+            />
+            <Input
+              name="longitude"
+              inputMode="decimal"
+              placeholder="Longitude"
+              className="rounded-full bg-white"
+              value={location.longitude}
+              onChange={(event) =>
+                setLocation((current) => ({
+                  ...current,
+                  longitude: event.target.value,
+                  placeId: "",
+                }))
+              }
+            />
+          </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="latitude"
-            inputMode="decimal"
-            placeholder="Latitude"
-            className="bg-white"
-            value={location.latitude}
-            onChange={(event) =>
-              setLocation((current) => ({
-                ...current,
-                latitude: event.target.value,
-                placeId: "",
-              }))
-            }
-          />
-          <Input
-            name="longitude"
-            inputMode="decimal"
-            placeholder="Longitude"
-            className="bg-white"
-            value={location.longitude}
-            onChange={(event) =>
-              setLocation((current) => ({
-                ...current,
-                longitude: event.target.value,
-                placeId: "",
-              }))
-            }
-          />
-        </div>
-      </div>
+      </details>
 
       {(hasPreviewCoordinates || location.locationAddress || location.gym) && (
         <MapPreview

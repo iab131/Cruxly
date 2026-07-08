@@ -140,7 +140,7 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
     return (
         <div className="max-w-6xl mx-auto px-4 mb-20">
             {/* Sticky feed header with quick category rail — floating liquid-glass island */}
-            <div className="glass-panel sticky top-16 md:top-3 z-30 mb-6 rounded-3xl border border-white/50 px-4 pb-3 pt-3">
+            <div className="glass-panel sticky top-3 z-30 mb-6 rounded-3xl border border-white/50 px-4 pb-3 pt-3">
                 <div className="flex items-center justify-between gap-4">
                     <h1 className="text-2xl md:text-3xl font-bold text-blue-950 tracking-tight">Discovery</h1>
                     <div className="flex items-center gap-2">
@@ -176,8 +176,8 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                             className={cn(
                                 "shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold backdrop-blur-md transition-all active:scale-95",
                                 gradeFilter === option.value
-                                    ? "border-white/30 bg-blue-950/90 text-white shadow-md shadow-blue-950/25"
-                                    : "border-white/60 bg-white/35 text-slate-700 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] hover:bg-white/55 hover:text-blue-950"
+                                    ? "border-white/30 bg-blue-950/90 text-white"
+                                    : "border-white/60 bg-white/35 text-slate-700 hover:bg-white/55 hover:text-blue-950"
                             )}
                         >
                             {option.label}
@@ -233,7 +233,9 @@ export function Feed({ initialProblems, isLoggedIn }: FeedProps) {
                         Setters on the wall
                         <span className="h-px flex-1 bg-slate-200" />
                     </div>
-                    <div className="no-scrollbar flex gap-4 overflow-x-auto pb-1">
+                    {/* px/py headroom (offset by negative margins) so hover-scaled
+                        avatars aren't clipped by the scroll container */}
+                    <div className="no-scrollbar flex gap-4 overflow-x-auto px-2 py-2 -mx-2 -mt-2 pb-1">
                         {setters.map((setter) => (
                             <Link
                                 key={setter.name}

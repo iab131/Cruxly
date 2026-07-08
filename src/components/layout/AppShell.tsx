@@ -35,9 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Desktop Sidebar (Left) */}
             <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 left-0 border-r border-slate-200 bg-white z-50">
                 <div className="p-6 h-20 flex items-center">
-                    <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-blue-950 tracking-tight">
-                        <Image src="/logo-blue.png" alt="Cruxly" width={28} height={28} className="rounded-md" />
-                        <span>Cruxly</span>
+                    <Link href="/" className="text-2xl font-bold text-blue-950 tracking-tight">
+                        Cruxly
                     </Link>
                 </div>
 
@@ -131,95 +130,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
             </aside>
 
-            {/* Mobile Header (Top) */}
-            <header className="md:hidden fixed top-0 w-full z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 h-14 px-4 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2 text-xl font-bold text-blue-950 tracking-tight">
-                    <Image src="/logo-blue.png" alt="Cruxly" width={24} height={24} />
-                    Cruxly
-                </Link>
-                <div className="flex gap-4 items-center">
-                    <Link href="/search" className="text-slate-600 hover:text-blue-950 transition-colors" aria-label="Explore">
-                        <Search className="w-5 h-5" />
-                    </Link>
-                    <SignedIn>
-                        <UserButton />
-                    </SignedIn>
-                    <SignedOut>
-                        <SignInButton mode="modal">
-                            <Button variant="ghost" size="icon" className="text-blue-950">
-                                <User className="w-5 h-5" />
-                            </Button>
-                        </SignInButton>
-                    </SignedOut>
-                </div>
-            </header>
+            {/* Mobile has no top chrome — the page's glass island is the header,
+                and the dock covers profile/sign-in. */}
 
             {/* Main Content */}
             <main className={cn(
                 "flex-1 min-h-screen w-full",
                 "md:ml-64", // Offset for sidebar
-                "pb-20 md:pb-0", // Space for mobile nav
-                "pt-14 md:pt-0" // Space for mobile header
+                "pb-24 md:pb-0" // Space for the floating mobile dock
             )}>
                 {children}
             </main>
 
-            {/* Mobile Bottom Tab Bar */}
-            <nav className="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 z-50 h-16 px-2 pb-safe">
-                <div className="grid grid-cols-5 h-full items-center justify-items-center">
-                    {navItems.map((item) => {
+            {/* Mobile Bottom Dock — compact Apple-style capsule + split Create circle */}
+            <nav className="md:hidden fixed bottom-4 inset-x-0 z-50 flex items-center justify-center gap-3 px-4 pb-safe pointer-events-none">
+                <div className="glass-dock pointer-events-auto flex items-center rounded-full p-1">
+                    {navItems.filter((item) => !item.primary).map((item) => {
                         const isActive = pathname === item.href
                         const Icon = item.icon
-
-                        // Elevated primary "Create" button, social-app style
-                        if (item.primary) {
-                            const primaryButton = (
-                                <span className="flex h-12 w-12 -mt-5 items-center justify-center rounded-full bg-blue-950 text-white shadow-lg shadow-blue-950/30 ring-4 ring-slate-50 transition-transform active:scale-90">
-                                    <Plus className="w-6 h-6 stroke-[2.5px]" />
-                                </span>
-                            )
-                            return (
-                                <div key={item.label} className="w-full h-full flex items-center justify-center">
-                                    <SignedIn>
-                                        <Link href={item.href} aria-label={item.label}>{primaryButton}</Link>
-                                    </SignedIn>
-                                    <SignedOut>
-                                        <SignInButton mode="modal">
-                                            <button aria-label={item.label}>{primaryButton}</button>
-                                        </SignInButton>
-                                    </SignedOut>
-                                </div>
-                            )
-                        }
-
-                        const commonClasses = "flex flex-col items-center justify-center gap-1 h-full w-full active:scale-95 transition-transform"
-                        const iconClasses = cn(
-                            "w-6 h-6 transition-all",
-                            isActive ? "text-blue-950 stroke-[2.5px]" : "text-slate-400"
+                        const label = item.label === "AI Solver" ? "AI" : item.label
+                        const classes = cn(
+                            "flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 transition-all active:scale-95",
+                            isActive && "bg-white/85 shadow-sm"
                         )
                         const inner = (
                             <>
-                                <Icon className={iconClasses} />
-                                <span className={cn(
-                                    "h-1 w-1 rounded-full transition-all",
-                                    isActive ? "bg-blue-950" : "bg-transparent"
-                                )} />
+                                <Icon className={cn("h-5 w-5 transition-colors", isActive ? "text-blue-950 stroke-[2.25px]" : "text-slate-500")} />
+                                <span className={cn("text-[10px] font-semibold leading-none transition-colors", isActive ? "text-blue-950" : "text-slate-500")}>
+                                    {label}
+                                </span>
                             </>
                         )
 
                         if (item.protected) {
                             return (
-                                <div key={item.label} className="w-full h-full flex items-center justify-center">
+                                <div key={item.label}>
                                     <SignedIn>
-                                        <Link href={item.href} className={commonClasses} aria-label={item.label}>
-                                            {inner}
-                                        </Link>
+                                        <Link href={item.href} className={classes} aria-label={item.label}>{inner}</Link>
                                     </SignedIn>
                                     <SignedOut>
                                         <SignInButton mode="modal">
-                                            <button className={commonClasses} aria-label={item.label}>
-                                                {inner}
-                                            </button>
+                                            <button className={classes} aria-label={item.label}>{inner}</button>
                                         </SignInButton>
                                     </SignedOut>
                                 </div>
@@ -227,16 +178,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         }
 
                         return (
-                            <Link
-                                key={item.label}
-                                href={item.href}
-                                className={commonClasses}
-                                aria-label={item.label}
-                            >
+                            <Link key={item.label} href={item.href} className={classes} aria-label={item.label}>
                                 {inner}
                             </Link>
                         )
                     })}
+                </div>
+
+                {/* Create — its own circle beside the capsule, like Apple's split search */}
+                <div className="pointer-events-auto">
+                    <SignedIn>
+                        <Link
+                            href="/new"
+                            aria-label="Create"
+                            className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-blue-950 text-white shadow-lg shadow-blue-950/30 ring-1 ring-white/40 transition-transform active:scale-90"
+                        >
+                            <Plus className="w-6 h-6 stroke-[2.5px]" />
+                        </Link>
+                    </SignedIn>
+                    <SignedOut>
+                        <SignInButton mode="modal">
+                            <button
+                                aria-label="Create"
+                                className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-blue-950 text-white shadow-lg shadow-blue-950/30 ring-1 ring-white/40 transition-transform active:scale-90"
+                            >
+                                <Plus className="w-6 h-6 stroke-[2.5px]" />
+                            </button>
+                        </SignInButton>
+                    </SignedOut>
                 </div>
             </nav>
             <Toaster richColors position="top-center" />
